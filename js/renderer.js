@@ -8,6 +8,7 @@ var Renderer = new Class({
 
 	setCanvas: function(canvas) {
 		var ctx = canvas.getContext('2d');
+		ctx.fillStyle = '#f8f8f8';
 		this.setContext(ctx);
 	},
 	
@@ -76,12 +77,15 @@ var Renderer = new Class({
 		switch (type) {
 			case 'top':
 				ctx.rotate(Math.PI);
-				ctx.translate(-768, -512);
+				ctx.translate(-624, -512);				
 			break;
 			case 'bottom':
-				ctx.translate(0, 512)
+				ctx.translate(144, 512);
 			break;
 		}
+
+		ctx.clearRect(0,0,480,512);
+		ctx.fillRect(0,0,480,512);
 	},
 
 	postrender: function(game) {
