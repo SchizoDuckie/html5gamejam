@@ -24,7 +24,7 @@ Game = new Class({
 	},
 
 	heartbeat: function() {
-		this.activeShape.moveBy(0,1)
+		this.activeShape.moveBy(0,-1)
 		this.activeShape.rotate(1);
 	},
 

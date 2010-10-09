@@ -44,7 +44,7 @@ TetrisShape = new Class({
 		// randomize
 		this.points = this.shapeData.S.shape;
 
-		this.moveTo(3,0);
+		this.moveTo(7, 17);
 
 
 		this.rotation = new Matrix();
