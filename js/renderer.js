@@ -20,6 +20,8 @@ var Renderer = new Class({
 	},
 
 	render: function(game) {
+		this.prerender(game);
+
 		var data = game.getData();
 		var sprite = game.getSprite();
 
@@ -60,6 +62,30 @@ var Renderer = new Class({
 
 			this.drawSprite(s, x, y);
 		}
+
+		this.postrender(game);
+	},
+
+	prerender: function(game) {
+		
+		var ctx = this.context;
+		ctx.save();
+		
+		var type = game.getOrientation();
+
+		switch (type) {
+			case 'top':
+				ctx.rotate(Math.PI);
+				ctx.translate(-768, -512);
+			break;
+			case 'bottom':
+				ctx.translate(0, 512)
+			break;
+		}
+	},
+
+	postrender: function(game) {
+		this.context.restore();
 	},
 
 	drawSprite: function(s, x, y) {

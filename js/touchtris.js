@@ -14,8 +14,17 @@ TouchTris = new Class({
 		// init pieces bin
 		// init powerups
 
-		var player1 = new Game({});
-		var player2 = new Game({});
+		var player1 = new Game({
+			width: 480,
+			height: 510,
+			orientation: 'top'
+		});
+
+		var player2 = new Game({
+			width: 480,
+			height: 510,
+			orientation: 'bottom'
+		});
 
 		this.addGame(player1);
 		this.addGame(player2);
@@ -47,8 +56,9 @@ TouchTris = new Class({
 			this.games[i].heartbeat();
 		}
 
-		this.renderer.render(this.games[0]);
-
+		for(var i=0; i<l; i++) {
+			this.renderer.render(this.games[i]);	
+		}
 	}
 
 });

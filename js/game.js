@@ -4,7 +4,10 @@
  */
 
 Game = new Class({
+	Implements: [Options],
+
 	initialize: function(options) {
+		this.setOptions(options);
 
 		this.sprite = new Sprite({
 			source: 'images/sprite.png',
@@ -23,6 +26,10 @@ Game = new Class({
 	heartbeat: function() {
 		this.activeShape.moveBy(0,1)
 		this.activeShape.rotate(1);
+	},
+
+	getOrientation: function() {
+		return this.options.orientation;
 	},
 
 	getSprite: function() {
