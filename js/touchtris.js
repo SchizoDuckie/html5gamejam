@@ -4,8 +4,11 @@
  */
 
 TouchTris = new Class({
-	
+	Implements: [Events],
+
 	initialize: function() {
+		this.games = [];
+
 		// init board
 		// init emitter
 		// init pieces bin
@@ -22,20 +25,30 @@ TouchTris = new Class({
 		});
 
 
-		this.renderer.render(player1);
-
+		this.start();
 	},
 
 	addGame: function(game) {
+		this.games.push(game);
 	},
 
 	start: function() {
+		this.stop();
+		this.timer = setInterval(this.tick.bind(this), 1000);
 	},
 
-	pause: function() {
+	stop: function() {
+		clearInterval(this.timer);
 	},
 
 	tick: function() {
+		var l = this.games.length;
+		for(var i=0; i<l; i++) {
+			this.games[i].heartbeat();
+		}
+
+		this.renderer.render(this.games[0]);
+
 	}
 
 });

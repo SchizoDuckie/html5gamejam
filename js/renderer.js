@@ -1,0 +1,97 @@
+var Renderer = new Class({
+	Implements: [Options],
+
+	initialize: function(options) {
+		this.setOptions(options);
+		this.setCanvas(options.canvas);
+	},
+
+	setCanvas: function(canvas) {
+		var ctx = canvas.getContext('2d');
+		this.setContext(ctx);
+	},
+	
+	setContext: function(context) {
+		this.context = context;
+	},
+
+	getContext: function() {
+		return this.context;
+	},
+
+	render: function(game) {
+		var data = game.getData();
+		var sprite = game.getSprite();
+
+		var w = data.getWidth();
+		var h = data.getHeight();
+
+		var x = 0;
+		var y = 0;
+		var s;
+		
+		// draw the static data
+		for(var i=0; i<h; i++) {
+			for(var j=0; j<w; j++) {
+				
+				var type = data.get(j, i);
+
+				if(type > 0) {
+					s = sprite.render(type);
+					x = (j * s.width);
+					y = (i * s.height);
+
+					this.drawSprite(s, x, y);
+				}
+			}
+		}
+
+		// draw the active shape
+		var shape = game.getActiveShape();
+		var points = shape.getPoints();
+		var l = points.length;
+
+		s = sprite.render(shape.getType())
+
+		for(var p,i=0; i<l; i++) {
+			p = points[i];
+			x = p[0] * s.width;
+			y = p[1] * s.height;
+
+			this.drawSprite(s, x, y);
+		}
+	},
+
+	drawSprite: function(s, x, y) {
+		this.context.drawImage(s, x, y);
+	}
+
+});
+
+
+
+var Sprite = new Class({
+	Implements: [Options],
+
+	initialize: function(options) {
+		this.setOptions(options);
+		this.image = new Image();
+		this.image.src = options.source;
+		
+		var c = this.canvas = document.createElement('canvas');
+		c.width = options.width;
+		c.height = options.height;
+
+		this.context = c.getContext('2d');
+	},
+
+	render: function(type) {
+		if(this.image.complete) {
+			var offset = - type * this.options.height;
+			this.context.drawImage(this.image, 0, offset);
+		}
+
+		return this.canvas;
+	}
+
+});
