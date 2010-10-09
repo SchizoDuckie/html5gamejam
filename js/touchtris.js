@@ -17,6 +17,13 @@ TouchTris = new Class({
 		this.addGame(player1);
 		this.addGame(player2);
 
+		this.renderer = new Renderer({
+			canvas: document.getElementById("game")
+		});
+
+
+		this.renderer.render(player1);
+
 	},
 
 	addGame: function(game) {
@@ -39,11 +46,6 @@ TouchTris = new Class({
  * 
  */
 
-Game = new Class({
-	initialize: function(options) {
-
-	}
-})
 
 
 
