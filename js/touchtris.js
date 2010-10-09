@@ -30,9 +30,9 @@ TouchTris = new Class({
 			canvas: canvas
 		});
 
-		this.touch = new Touch({
-			canvas: canvas
-		});
+		//this.touch = new Touch({
+		//	canvas: canvas
+		//});
 
 		$(document).addEvent('schwipe', this.handleSwipe.bind(this));
 

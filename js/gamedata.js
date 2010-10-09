@@ -77,7 +77,8 @@ var GameData= new Class({
 	 */
 	canMove: function(Shape, x, y) {
 		var fits = true;
-		var points = Shape.getPoints();
+		var points = Shape.transform(Shape.rotation);
+		
 		var nextX = Shape.x +x;
 		var nextY = Shape.y +y;
 		
@@ -85,7 +86,7 @@ var GameData= new Class({
 		{
 			var xMove = nextX + points[i][0]; // x
 			var yMove = nextY + points[i][1]; // y;
-			if(yMove == 0|| this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0) {
+			if(yMove == 0  || Shape.y > this.getHeight() || this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0) {
 				return false;	
 			}
 		}
@@ -103,13 +104,16 @@ var GameData= new Class({
 	// place the block in the internal grid on position x*y, since that waspossible.
 	placeShape: function(Shape) {
 		console.debug('place shape ', Shape);
-		var points = Shape.getPoints();
+		var points = Shape.transform(Shape.rotation);
 		// loop all rotated points
 		console.log("placing shape for points: ", points.join("\n") + "@ "+ Shape.x+'*'+Shape.y);
 		for(i=0; i<points.length;i++) {	
 			// mark all the points in the grid as the type of shape.getType
+			if(Shape.y + points[i][1] >= this.getHeight()) this.gameOver();
 			this.grid[Shape.y + points[i][1]][Shape.x + points[i][0]] = Shape.getType();
-			console.log("Current grid: ", this.grid.join("\n"));
+				
+		
+			//console.log("Current grid: ", this.grid.join("\n"));
 		}
 		//this.fireEvent('blockplaced');
 	},
