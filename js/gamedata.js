@@ -68,10 +68,23 @@ var GameData= new Class({
 		return this.grid;
 	},
 
-
+	/**
+	 * check if the current tetris shape object fits at pos x*y
+	 *
+	 * to do this: get a fix on x*y in the this.grid object
+	 * get the this.
+	 *
+	 */
 	doesFit: function(TetrisShapeObject, x,y) {
+		var fits = false;
+		for(y= this.grid.length; y > -1; y--) {
+			for(x=0; i< this.options.blocksWidth; x++) {
+				
+				
+			}
+			this.fireEvent('blockplaced');
+		}
 
-		
 		// fire shape drop event if y -1 == collision
 	},
 
@@ -100,14 +113,9 @@ var GameData= new Class({
 
 	// remove the a line in the grid, add a new line on top.
 	removeLine: function(lineNumber) {
-		console.debug("removing line "+lineNumber);
 		var ln = lineNumber || 0;
 		var removedLine = this.grid.splice(ln,1);
-		
 		this.grid.push(this.getNewRow());
-			
-		//this.grid = this.grid.push(this.getNewRow());
-		
 	},
 
 	/**

@@ -1,39 +1,34 @@
 TetrisShape = new Class({
 	Implements: [Options],
 
-	shapeData: {
-		// Square
-		Square: { 
+	shapeData: [
+		{ 
 			shape: [ [-1, 0], [0,-1],[-1,0], [0,0] ],
 			probability: 1,
 			mirrorable: false	
 		},
-		// L shape
-		L: { 
+	    { 
 			shape: [ [-1,-2], [-1, -1], [-1,0], [0,0]  ], 
 			probability: 0.8,
 			mirrorable: true
 		},
-		// Line 
-		Line: { 
+	    { 
 			shape: [ [0,-2], [0, -1], [0,0], [0,1] ],  
 			probability: 1,
 			mirrorable: false
 		},
-		// S-shape
-		S: { 
+		{ 
 			shape: [ [-1,0], [0,0], [0, -1], [1,-1] ],
 			probability: 1,
 			mirrorable: true
 		},
-		// Pyramid shape
-		Pyramid: {
+		{
 			shape: [ [0,-1], [-1,0], [0,0], [1,0]  ],
 			probability: 1,
 			mirrorable: false
 
 		}
-	},
+	],
 
 	// choose a new block
 	// based on probability 
@@ -42,8 +37,10 @@ TetrisShape = new Class({
 		this.setOptions(options);
 
 		// randomize
-		this.points = this.shapeData.S.shape;
 
+		var randomNumber = Math.floor(Math.random() * this.shapeData.length +1 );
+		console.debug('Picked random: ', randomNumber);
+		this.points = this.shapeData[randomNumber].shape;
 		this.moveTo(3,0);
 
 
