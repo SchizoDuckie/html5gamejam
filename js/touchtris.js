@@ -91,8 +91,8 @@ TouchTris = new Class({
 			this.renderer.render(this.games[i]);
 		}
 
-	//	var fingers = this.touch.getFingers();
-	//	this.renderer.renderFingers(fingers);
+		var fingers = this.touch.getFingers();
+		this.renderer.renderFingers(fingers);
 	}
 
 });
