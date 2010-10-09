@@ -3,7 +3,7 @@ TetrisShape = new Class({
 
 	shapeData: [
 		{ 
-			shape: [ [-1, 0], [0,-1],[-1,0], [0,0] ],
+			shape: [ [-1,-1], [0,-1],[-1,0], [0,0] ],
 			probability: 1,
 			mirrorable: false	
 		},
@@ -29,28 +29,32 @@ TetrisShape = new Class({
 
 		}
 	],
+	rotatedPoints: false,
 
 	// choose a new block
 	// based on probability 
 	// rotate it random, mirror it random if mirrorable.
 	initialize: function(options) {
 		this.setOptions(options);
-
+		
 		// randomize
 
-		var randomNumber = Math.floor(Math.random() * this.shapeData.length );
+		var randomNumber = Math.floor(Math.random() * this.shapeData.length		);
 		console.debug('Picked random: ', randomNumber);
+		this.options.type = randomNumber;
 		this.points = this.shapeData[randomNumber].shape;
-		this.moveTo(7,17);
-
-
 		this.rotation = new Matrix();
 		this.angle = Math.PI / 2;
+		
+		this.moveTo(4,17);
+		this.getPoints();
+		
+		
 	},
 
 	// rotates the dataset for this shape
 	rotate: function(direction) {
-		this.rotation.rotate(this.angle * direction);
+			this.rotation.rotate(this.angle * direction);
 	},
 
 	// mirror the dataset for this shape
@@ -69,10 +73,6 @@ TetrisShape = new Class({
 	moveBy: function(x, y) {
 		this.x += x;
 		this.y += y;
-	},
-
-	drop: function() {
-	
 	},
 
 	transform: function(matrix) {
@@ -110,18 +110,16 @@ TetrisShape = new Class({
 	getPoints: function() {
 		var x = this.x;
 		var y = this.y;
-
-		var points = this.transform(this.rotation);
-		var l = points.length;
-		var result = [];
-		for(var p,i=0; i<l; i++) {
-			p = points[i];
-			result.push([
-				p[0] + x,
-				p[1] + y
-			]);
-		}
-
+			var points = this.transform(this.rotation);
+			var l = points.length;
+			var result = [];
+			for(var p,i=0; i<l; i++) {
+				p = points[i];
+				result.push([
+					p[0] + x,
+					p[1] + y
+				]);
+			}
 		return result;
 	}
 });
