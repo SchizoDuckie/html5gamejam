@@ -31,6 +31,12 @@ TetrisShape = new Class({
 			mirrorable: false
 
 		}
+	},
+	
+	// default options. 
+	options: {
+		x: 
+		y:
 	}
 
 	// choose a new block
@@ -38,6 +44,7 @@ TetrisShape = new Class({
 	// rotate it random, mirror it random if mirrorable.
 	initialize: function() {
 		
+		// listen: rotate
 
 	},
 
@@ -54,5 +61,15 @@ TetrisShape = new Class({
 	// return the currently active shapeData in the currently rotated way
 	getShape: function() {
 		
-	}
+	},
+
+	drop: function() {
+
+	},
+
+	// fire events:
+		rotated
+		dropped
+		drop
+	
 });
