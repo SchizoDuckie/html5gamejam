@@ -16,16 +16,25 @@ Game = new Class({
 		});
 
 		this.data = new GameData();
-
-		this.activeShape = new TetrisShape({
-			type: 3
-		});
+		this.getNewShape();
 
 	},
 
 	heartbeat: function() {
-		this.activeShape.moveBy(0,-1)
-		this.activeShape.rotate(1);
+		if(this.data.gameOver()) return;
+		if(this.data.canMove(this.activeShape, 0, -1))
+		{
+			this.activeShape.moveBy(0,-1);	
+			
+		} else {
+			this.data.placeShape(this.activeShape, 0, 0);
+			this.getNewShape()
+		}
+	},
+	
+	getNewShape: function() {
+		console.debug('creating new TetrisShape');
+		this.activeShape = new TetrisShape();
 	},
 
 	getOrientation: function() {

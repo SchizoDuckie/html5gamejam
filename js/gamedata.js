@@ -7,11 +7,11 @@ var GameData= new Class({
 	},
 
 	grid: [
-		[ 0,1,1,1,3,3,3,0,0,2,2,2,2,1,0,4 ],
-		[ 1,0,1,2,1,3,1,0,0,0,0,1,1,1,0,4 ],
-		[ 1,0,2,2,1,4,4,4,4,6,0,5,5,5,5,4 ],
-		[ 2,4,2,4,1,4,1,4,6,6,6,4,4,4,4,4 ],
-		[ 2,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
 		[ 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
 		[ 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
 		[ 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
@@ -75,23 +75,43 @@ var GameData= new Class({
 	 * get the this.
 	 *
 	 */
-	canMove: function(TetrisShapeObject, x,y) {
-		var fits = false;
-		for(y= this.grid.length; y > -1; y--) {
-			for(x=0; i< this.options.blocksWidth; x++) {
-				
-				
+	canMove: function(Shape, x, y) {
+		var fits = true;
+		var points = Shape.getPoints();
+		var nextX = Shape.x +x;
+		var nextY = Shape.y +y;
+		
+		for (i=0; i  < points.length; i++)
+		{
+			var xMove = nextX + points[i][0]; // x
+			var yMove = nextY + points[i][1]; // y;
+			if(yMove == 0|| this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0) {
+				return false;	
 			}
-			this.fireEvent('blockplaced');
 		}
+		return fits;
 
 		// fire shape drop event if y -1 == collision
 	},
 
+	gameOver: function() {
+		for(i=0; i<  this.grid[this.grid.length]; i++) {
+			if(this.grid[this.grid.length][i] > 0) return true;
+		}
+	},
+
 	// place the block in the internal grid on position x*y, since that waspossible.
-	placeBlock: function(x,y) {
-
-
+	placeShape: function(Shape) {
+		console.debug('place shape ', Shape);
+		var points = Shape.getPoints();
+		// loop all rotated points
+		console.log("placing shape for points: ", points.join("\n") + "@ "+ Shape.x+'*'+Shape.y);
+		for(i=0; i<points.length;i++) {	
+			// mark all the points in the grid as the type of shape.getType
+			this.grid[Shape.y + points[i][1]][Shape.x + points[i][0]] = Shape.getType();
+			console.log("Current grid: ", this.grid.join("\n"));
+		}
+		//this.fireEvent('blockplaced');
 	},
 
 	/** 
