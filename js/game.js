@@ -15,7 +15,7 @@ Game = new Class({
 			height: 30
 		});
 
-	//	this.data = new GameData();
+		this.data = new GameData();
 
 		this.activeShape = new TetrisShape({
 			type: 3
@@ -41,14 +41,8 @@ Game = new Class({
 	},
 
 	getData: function() {
-	//	return this.data;
+		return this.data;
 
-		return {
-			getWidth: function() { return 7; },
-			getHeight: function() { return 7; },
-			get: function() {
-				return 1
-			}
-		}
+		
 	}
 })
