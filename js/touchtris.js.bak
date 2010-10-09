@@ -1,0 +1,175 @@
+/**
+ * controller
+ * 
+ */
+// 1 player width* height = 
+TouchTris = new Class({
+	
+	initialize: function() {
+		// init board
+		// init emitter
+		// init pieces bin
+		// init powerups
+	//	alert(document.body.clientWidth + 'x'+ document.body.clientHeight);
+
+		var player1 = new Game({});
+		var player2 = new Game({});
+
+		this.addGame(player1);
+		this.addGame(player2);
+
+	},
+
+	addGame: function(game) {
+	},
+
+	start: function() {
+	},
+
+	pause: function() {
+	},
+
+	tick: function() {
+	}
+
+});
+
+
+/**
+ * game
+ * 
+ */
+
+Game = new Class({
+
+	Implements: [Options],
+	options: {
+		screenWidth: 480,
+		screenHeight: 510,
+		blockHeight: 30,
+		blockWidth: 30	
+
+	}
+
+
+	initialize: function(options) {
+		this.setOptions(options);
+		this.availWidth = 480
+		this.availx510 
+	},
+})
+
+
+GameData: new Class({
+	blocksWidth: 16, // available number of blocks in width (480 / 16 )
+	blocksHeight: 17, // available number of blocks in height
+
+	var grid = [
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+	]
+
+	// return howmany blocks are available for width
+	getX: function() {
+
+
+	},
+
+	// return howmany blocks are available for height
+	getY: function() {
+		
+
+	},
+
+
+	doesFit(blockObject, x,y) {
+
+	},
+
+	removeLine(
+
+
+});
+
+
+TetrisShape = new Class({
+	shapeData: {
+		// Square
+		Square: { 
+			shape: [ [-1, 0], [0,-1],[-1,0], [0,0] ],
+			probability: 1,
+			mirrorable: false	
+		},
+		// L shape
+		L: { 
+			shape: [ [-1,-2], [-1, -1], [-1,0], [0,0]  ], 
+			probability: 0.8,
+			mirrorable: true
+		},
+		// Line 
+		Line: { 
+			shape: [ [0,-2], [0, -1], [0,0], [0,1] ],  
+			probability: 1,
+			mirrorable: false
+		},
+		// S-shape
+		S: { 
+			shape: [ [-1,0], [0,0], [0, -1], [1,-1] ],
+			probability: 1,
+			mirrorable: true
+		}
+		// Pyramid shape
+		Pyramid: {
+			shape: [ [0,-1], [-1,0], [0,0], [1,0]  ],
+			probability: 1,
+			mirrorable: false
+
+		}
+	}
+
+	// choose a new block
+	// based on probability 
+	// rotate it random, mirror it random if mirrorable.
+	initialize: function() {
+		
+
+	},
+
+	// rotates the dataset for this shape
+	rotate: function(direction) {
+	
+	},
+
+	// mirror the dataset for this shape
+	mirror: function() {
+
+	},
+	
+	// return the currently active shapeData in the currently rotated way
+	getShape: function() {
+		
+	}
+});
+
+
+
+$(window).addEvent('domready', function() {
+
+	window.touchtris = new TouchTris();
+
+});

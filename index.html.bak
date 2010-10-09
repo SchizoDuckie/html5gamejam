@@ -3,7 +3,7 @@
 <head>
 	<meta name="encoding" content="utf-8">
 	  <meta name="viewport" content="width=device-width; height=device-height; initial-scale=1.0; maximum-scale: 1.0"> 
-	 <!-- ipad viewport for 1 player: 480x510 -->
+
 	<link rel='stylesheet' href='style.css' />
 	<title>Ipad Demo</title>
 	<meta name="apple-mobile-web-app-capable" content="yes"> 

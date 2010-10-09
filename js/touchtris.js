@@ -2,7 +2,7 @@
  * controller
  * 
  */
-
+// 1 player width* height = 
 TouchTris = new Class({
 	
 	initialize: function() {
@@ -10,6 +10,7 @@ TouchTris = new Class({
 		// init emitter
 		// init pieces bin
 		// init powerups
+	//	alert(document.body.clientWidth + 'x'+ document.body.clientHeight);
 
 		var player1 = new Game({});
 		var player2 = new Game({});
@@ -40,10 +41,25 @@ TouchTris = new Class({
  */
 
 Game = new Class({
-	initialize: function(options) {
+
+	Implements: [Options],
+	options: {
+		screenWidth: 480,
+		screenHeight: 510,
+		blockHeight: 30,
+		blockWidth: 30	
 
 	}
+
+
+	initialize: function(options) {
+		this.setOptions(options);
+		this.availWidth = 480
+		this.availx510 
+	},
 })
+
+
 
 
 
