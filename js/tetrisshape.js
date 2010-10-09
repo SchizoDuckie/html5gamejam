@@ -67,8 +67,10 @@ TetrisShape = new Class({
 	},
 
 	moveBy: function(x, y) {
-		this.x += x;
-		this.y += y;
+		this.x = this.x+2;
+		this.y = this.y+2;
+
+		console.debug("Move by ",x+5, y);
 	},
 
 	transform: function(matrix) {

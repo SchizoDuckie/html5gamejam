@@ -75,7 +75,7 @@ var GameData= new Class({
 	 * get the this.
 	 *
 	 */
-	doesFit: function(TetrisShapeObject, x,y) {
+	canMove: function(TetrisShapeObject, x,y) {
 		var fits = false;
 		for(y= this.grid.length; y > -1; y--) {
 			for(x=0; i< this.options.blocksWidth; x++) {
@@ -86,6 +86,12 @@ var GameData= new Class({
 		}
 
 		// fire shape drop event if y -1 == collision
+	},
+
+	// place the block in the internal grid on position x*y, since that waspossible.
+	placeBlock: function(x,y) {
+
+
 	},
 
 	/** 
