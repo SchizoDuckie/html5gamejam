@@ -9,6 +9,8 @@ var Renderer = new Class({
 	setCanvas: function(canvas) {
 		var ctx = canvas.getContext('2d');
 		ctx.fillStyle = '#f8f8f8';
+		ctx.lineWidth = 5;
+		ctx.strokeStyle = '#000000';
 		this.setContext(ctx);
 	},
 	
@@ -90,6 +92,32 @@ var Renderer = new Class({
 
 	postrender: function(game) {
 		this.context.restore();
+	},
+
+	renderFingers: function(fingers) {
+		var l = fingers.length;
+		var finger;
+		for(var i=0; i<l; i++) {
+			finger = fingers[i];
+			finger && this.renderFinger(finger);
+		}
+	},
+
+	renderFinger: function(finger) {
+		var points = finger.getPoints();
+		var l = points.length;
+		var ctx = this.context;
+		var p = points[0];
+
+		ctx.beginPath();
+		ctx.moveTo(p.x, p.y);
+		for(var i=1; i<l; i++) {
+			p = points[i];
+			ctx.lineTo(p.x, p.y);
+		}
+		
+		//ctx.closePath(); //nah
+		ctx.stroke();
 	},
 
 	drawSprite: function(s, x, y) {

@@ -4,7 +4,7 @@
  */
 
 Game = new Class({
-	Implements: [Options],
+	Implements: [Events, Options],
 
 	initialize: function(options) {
 		this.setOptions(options);
@@ -20,12 +20,27 @@ Game = new Class({
 		this.activeShape = new TetrisShape({
 			type: 3
 		});
+	},
 
+	performAction: function(type) {
+		switch (type) {
+			case 'left':
+				this.activeShape.moveBy(-1, 0);
+			break;
+			case 'right':
+				this.activeShape.moveBy(1, 0);
+			break;
+			case 'drop':
+				this.activeShape.moveBy(-1, 0);
+			break;
+			case 'rotate':
+				this.activeShape.rotate(1);
+			break;
+		}
 	},
 
 	heartbeat: function() {
-		this.activeShape.moveBy(0,-1)
-		this.activeShape.rotate(1);
+		this.activeShape.moveBy(0, -1);
 	},
 
 	getOrientation: function() {
@@ -42,7 +57,5 @@ Game = new Class({
 
 	getData: function() {
 		return this.data;
-
-		
 	}
 })

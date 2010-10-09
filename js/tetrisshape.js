@@ -38,10 +38,10 @@ TetrisShape = new Class({
 
 		// randomize
 
-		var randomNumber = Math.floor(Math.random() * this.shapeData.length +1 );
+		var randomNumber = Math.floor(Math.random() * this.shapeData.length );
 		console.debug('Picked random: ', randomNumber);
 		this.points = this.shapeData[randomNumber].shape;
-		this.moveTo(3,0);
+		this.moveTo(7,17);
 
 
 		this.rotation = new Matrix();
@@ -67,10 +67,12 @@ TetrisShape = new Class({
 	},
 
 	moveBy: function(x, y) {
-		this.x = this.x+2;
-		this.y = this.y+2;
+		this.x += x;
+		this.y += y;
+	},
 
-		console.debug("Move by ",x+5, y);
+	drop: function() {
+	
 	},
 
 	transform: function(matrix) {
