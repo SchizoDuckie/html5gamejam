@@ -83,8 +83,8 @@ var GameData= new Class({
 		{
 			var xMove = x + points[i][0]; // x
 			var yMove = y + points[i][1]; // y;
-			console.debug(xMove+'x'+yMove+" " + points.join('|'));
-			console.debug("CanMove: "+points[i]+" from "+y + "x"+x+" to "+(x + points[i][0])+ "x"+ (y+ points[i][1]));
+			//console.debug(xMove+'x'+yMove+" " + points.join('|'));
+			//console.debug("CanMove: "+points[i]+" from "+y + "x"+x+" to "+(x + points[i][0])+ "x"+ (y+ points[i][1]));
 			if(yMove < 0 || xMove == -1 || xMove >= this.getWidth() || (this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0)) {
 				fits = false;	
 			}
