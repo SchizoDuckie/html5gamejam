@@ -95,18 +95,11 @@ var GameData= new Class({
 		// fire shape drop event if y -1 == collision
 	},
 
-	gameOver: function() {
-		for(i=0; i<  this.grid[this.grid.length]; i++) {
-			if(this.grid[this.grid.length][i] > 0) return true;
-		}
-	},
 
 	// place the block in the internal grid on position x*y, since that waspossible.
 	placeShape: function(Shape) {
-		console.debug('place shape ', Shape);
 		var points = Shape.transform(Shape.rotation);
 		// loop all rotated points
-		console.log("placing shape for points: ", points.join("\n") + "@ "+ Shape.x+'*'+Shape.y);
 		for(i=0; i<points.length;i++) {	
 			// mark all the points in the grid as the type of shape.getType
 			if(Shape.y + points[i][1] >= this.getHeight()) this.gameOver();

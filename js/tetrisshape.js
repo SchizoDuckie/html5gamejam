@@ -40,7 +40,6 @@ TetrisShape = new Class({
 		// randomize
 
 		var randomNumber = Math.floor(Math.random() * this.shapeData.length		);
-		console.debug('Picked random: ', randomNumber);
 		this.options.type = randomNumber;
 		this.points = this.shapeData[randomNumber].shape;
 		this.rotation = new Matrix();
