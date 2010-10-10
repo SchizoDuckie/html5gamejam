@@ -34,6 +34,24 @@ Game = new Class({
 			this.getNewShape()
 		}
 	},
+
+	performAction: function(type) {
+		var shape = this.activeShape;
+		switch (type) {
+			case 'left':
+				shape.moveBy(-1, 0);
+			break;
+			case 'right':
+				shape.moveBy(1, 0);
+			break;
+			case 'rotate':
+				shape.rotate(1);
+			break;
+			case 'drop':
+				shape.drop();
+			break;
+		}
+	},
 	
 	getNewShape: function() {
 		this.activeShape = new TetrisShape();

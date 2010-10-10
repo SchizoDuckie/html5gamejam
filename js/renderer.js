@@ -99,7 +99,7 @@ var Renderer = new Class({
 		var finger;
 		for(var i=0; i<l; i++) {
 			finger = fingers[i];
-			finger && this.renderFinger(finger);
+			finger.active && this.renderFinger(finger);
 		}
 	},
 
