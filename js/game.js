@@ -25,14 +25,17 @@ Game = new Class({
 
 	heartbeat: function() {
 		if(this.gameOver) return;
-		if(this.data.canMove(this.activeShape, 0, -1)) {
+		var points = this.activeShape.transform(this.activeShape.rotation);	
+
+		if(this.data.canMove(points, this.activeShape.x, this.activeShape.y -1))
+		{	
 			this.activeShape.moveBy(0,-1);	
-		} else {
+		} 
+		else {
 			if(this.activeShape.y == this.data.getHeight()) {
 				this.gameOver = true;
 			}
-			
-			this.data.placeShape(this.activeShape, 0, 0);
+			this.data.placeShape(points, this.activeShape.getType(), this.activeShape.x, this.activeShape.y);
 			this.getNewShape()
 		}
 	},
@@ -40,17 +43,23 @@ Game = new Class({
 	performAction: function(type) {
 		var shape = this.activeShape;
 		var data = this.data;
+		var points = shape.transform(shape.rotation);
 
 		switch (type) {
 			case 'left':
-				data.canMove(shape, -1, 0) && shape.moveBy(-1, 0);
+				data.canMove(points, shape.x -1, shape.y) && shape.moveBy(-1, 0);
 			break;
 			case 'right':
-				data.canMove(shape, 1, 0) && shape.moveBy(1, 0);
+				data.canMove(points, shape.x +1, shape.y) && shape.moveBy(1, 0);
 			break;
+			case 'up':
 			case 'rotate':
 				shape.rotate(1);
+				if(!data.canMove(shape.transform(shape.rotation), shape.x, shape.y )) {
+					shape.rotate(-1);
+				}
 			break;
+			case 'down':
 			case 'drop':
 				shape.drop();
 			break;
