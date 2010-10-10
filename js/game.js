@@ -27,7 +27,7 @@ Game = new Class({
 			this.activeShape.moveBy(0,-1);	
 			
 		} else {
-			this.data.placeShape(this.activeShape, 0, 0);
+			this.data.placeShape(this.activeShape, 0, -1);
 			this.getNewShape()
 		}
 	},
