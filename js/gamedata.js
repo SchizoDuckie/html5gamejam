@@ -148,10 +148,10 @@ var GameData= new Class({
 	// remove the a line in the grid, add a new line on top.
 	removeLine: function(lineNumber) {
 		var ln = lineNumber || 0;
-		var removedLine = this.grid.splice(ln,1);
-		for(i=0;i<removedLine.length; i++) {
+		var removedLine = this.grid.splice(ln,1)[0];
+		for(var i=0; i<removedLine.length; i++) {
 			if(removedLine[i] > 5) { // fire special powerup event.
-				this.fireEvent('powerup', this.removedLine[i]);
+				this.fireEvent('powerup', removedLine[i]);
 			}
 		}
 		this.grid.push(this.getNewRow());

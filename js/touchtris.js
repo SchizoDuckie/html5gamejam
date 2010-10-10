@@ -26,6 +26,9 @@ TouchTris = new Class({
 		this.addGame(player1);
 		this.addGame(player2);
 
+		player1.addEvent('powerup', this.doPowerup.bind(this));
+		player2.addEvent('powerup', this.doPowerup.bind(this));
+
 		var canvas = document.getElementById("game");
 
 		var renderer = this.renderer = new Renderer({
@@ -90,13 +93,35 @@ TouchTris = new Class({
 		this.renderer.render(game);
 	},
 
+	doPowerup: function(event) {
+		var origin = event.game;
+		var total = 34;
+		var data1 = this.player1.getData();
+		var data2 = this.player2.getData();
+
+		try {
+			
+			if(origin == this.player1) {
+				var h = data1.getHeight() -1;
+				data1.setHeight(h);
+				data2.setHeight(34 - h);
+			} else {
+				var h = data2.getHeight() -1;
+				data2.setHeight(h);
+				data1.setHeight(34 - h);
+			}
+		
+		} catch (e) {
+		}
+	},
+
 	addGame: function(game) {
 		this.games.push(game);
 	},
 
 	start: function() {
 		this.stop();
-		this.timer = setInterval(this.tick.bind(this), 500);
+		this.timer = setInterval(this.tick.bind(this), 750);
 	},
 
 	stop: function() {

@@ -70,7 +70,7 @@ Game = new Class({
 	},
 
 	doPowerup:function(e) {
-		console.log(e);
+		this.fireEvent('powerup', {game: this});
 	},
 	
 	getNewShape: function() {
