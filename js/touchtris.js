@@ -41,11 +41,9 @@ TouchTris = new Class({
 
 	// handle a swipe gesture by any one or more fingers
 	handleSwipe: function(e) {
-		var dir = e.dir;
+		var dir = e.direction;
 		var origin = e.origin;
 
-		console.log(origin)
-	
 		var i = (origin.y < 512)? 0 : 1;
 		var game = this.games[i];
 		var action;
@@ -74,7 +72,7 @@ TouchTris = new Class({
 
 	start: function() {
 		this.stop();
-		this.timer = setInterval(this.tick.bind(this), 100);
+		this.timer = setInterval(this.tick.bind(this), 1000);
 	},
 
 	stop: function() {

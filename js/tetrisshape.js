@@ -46,7 +46,7 @@ TetrisShape = new Class({
 		this.rotation = new Matrix();
 		this.angle = Math.PI / 2;
 		
-		this.moveTo(4,17);
+		this.moveTo(7,17);
 		this.getPoints();
 		
 		
@@ -73,6 +73,9 @@ TetrisShape = new Class({
 	moveBy: function(x, y) {
 		this.x += x;
 		this.y += y;
+	},
+
+	drop: function() {
 	},
 
 	transform: function(matrix) {
@@ -110,16 +113,18 @@ TetrisShape = new Class({
 	getPoints: function() {
 		var x = this.x;
 		var y = this.y;
-			var points = this.transform(this.rotation);
-			var l = points.length;
-			var result = [];
-			for(var p,i=0; i<l; i++) {
-				p = points[i];
-				result.push([
-					p[0] + x,
-					p[1] + y
-				]);
-			}
+
+		var points = this.transform(this.rotation);
+		var l = points.length;
+		var result = [];
+		for(var p,i=0; i<l; i++) {
+			p = points[i];
+			result.push([
+				p[0] + x,
+				p[1] + y
+			]);
+		}
+
 		return result;
 	}
 });
