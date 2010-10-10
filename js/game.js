@@ -4,7 +4,7 @@
  */
 
 Game = new Class({
-	Implements: [Options],
+	Implements: [Options, Events],
 
 	initialize: function(options) {
 		this.setOptions(options);
@@ -36,6 +36,7 @@ Game = new Class({
 				this.gameOver = true;
 			}
 			this.data.placeShape(points, this.activeShape.getType(), this.activeShape.x, this.activeShape.y);
+			this.fireEvent('shapeplaced', this.activeShape);
 			this.getNewShape()
 		}
 	},
