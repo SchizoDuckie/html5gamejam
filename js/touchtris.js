@@ -36,6 +36,7 @@ TouchTris = new Class({
 			canvas: canvas
 		});
 
+		$(document).addEvent('keydown', this.handleKeyPress.bind(this));
 		$(document).addEvent('schwipe', this.handleSwipe.bind(this));
 
 		var background = new Image();
@@ -45,6 +46,12 @@ TouchTris = new Class({
 		background.src = 'images/background.jpg';
 
 		this.start();
+	},
+
+	handleKeyPress: function(e) {
+		this.games[1].performAction(e.key);
+		e.cancel();
+
 	},
 
 	// handle a swipe gesture by any one or more fingers

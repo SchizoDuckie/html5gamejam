@@ -75,10 +75,11 @@ TetrisShape = new Class({
 	},
 
 	drop: function() {
+		this.y -= 1;
 	},
 
-	transform: function(matrix) {
-		var p = this.points;
+	transform: function(matrix, points) {
+		var p = points || this.points ;
 		var l = p.length;
 		var result = [];
 

@@ -75,38 +75,32 @@ var GameData= new Class({
 	 * get the this.
 	 *
 	 */
-	canMove: function(Shape, x, y) {
+	canMove: function(points, x,y) {
 		var fits = true;
-		var points = Shape.transform(Shape.rotation);
-		console.debug(Shape.y + ' : ' +points.join('|'));
-		var nextX = Shape.x + x;
-		var nextY = Shape.y + y;
-		if(nextY <= 0) return false;
+		if(y <= 0) return false;
 
 		for (i=0; i  < points.length; i++)
 		{
-			var xMove = nextX + points[i][0]; // x
-			var yMove = nextY + points[i][1]; // y;
-			if(yMove == 0  || Shape.y > this.getHeight() || this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] != 0) {
+			var xMove = x + points[i][0]; // x
+			var yMove = y + points[i][1]; // y;
+			if(yMove == 0  || xMove == -1 || xMove > this.getWidth() || (this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0)) {
 				return false;	
 			}
 		}
-		return fits;
+		return true;
 
 		// fire shape drop event if y -1 == collision
 	},
 
 
 	// place the block in the internal grid on position x*y, since that waspossible.
-	placeShape: function(Shape) {
-		var points = Shape.transform(Shape.rotation);
+	placeShape: function(points, type,  x, y) {
 		
-		console.log('Place shape of type: '+Shape.getType() + " x: "+ Shape.x +" y: " + Shape.y, points.join('|'));
+		console.log('Place shape of type: '+type + " x: "+ x +" y: " + y, points.join('|'));
 		// loop all rotated points
-		var curx = Shape.x;
-		var curry = Shape.y
+		
 		for(i=0; i< points.length; i++) {	
-			this.grid[curry + points[i][1]][curx + points[i][0]] = Shape.getType();
+			this.grid[y + points[i][1]][x + points[i][0]] = type;
 			
 			//console.log("Current grid: ", this.grid.join("\n"));
 		}
