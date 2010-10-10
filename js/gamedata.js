@@ -98,7 +98,8 @@ var GameData= new Class({
 
 	// place the block in the internal grid on position x*y, since that waspossible.
 	placeShape: function(Shape) {
-		var points = Shape.transform(Shape.rotation);
+	
+		var points = Shape.getType() != 5 ? Shape.transform(Shape.rotation) : Shape.points;
 		// loop all rotated points
 		for(i=0; i<points.length;i++) {	
 			// mark all the points in the grid as the type of shape.getType
@@ -109,6 +110,7 @@ var GameData= new Class({
 			//console.log("Current grid: ", this.grid.join("\n"));
 		}
 		//this.fireEvent('blockplaced');
+		this.recalcGrid();
 	},
 
 	/** 

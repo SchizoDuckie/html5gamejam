@@ -72,7 +72,7 @@ TouchTris = new Class({
 
 	start: function() {
 		this.stop();
-		this.timer = setInterval(this.tick.bind(this), 1000);
+		this.timer = setInterval(this.tick.bind(this), 500);
 	},
 
 	stop: function() {
