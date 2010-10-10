@@ -30,9 +30,9 @@ TouchTris = new Class({
 			canvas: canvas
 		});
 
-		//this.touch = new Touch({
-		//	canvas: canvas
-		//});
+		this.touch = new Touch({
+			canvas: canvas
+		});
 
 		$(document).addEvent('schwipe', this.handleSwipe.bind(this));
 
@@ -89,8 +89,8 @@ TouchTris = new Class({
 			this.renderer.render(this.games[i]);
 		}
 
-		var fingers = this.touch.getFingers();
-		this.renderer.renderFingers(fingers);
+	//	var fingers = this.touch.getFingers();
+	//	this.renderer.renderFingers(fingers);
 	}
 
 });
