@@ -46,7 +46,7 @@ TetrisShape = new Class({
 		this.rotation = new Matrix();
 		this.angle = Math.PI / 2;
 
-		var awesome = Math.random() > 0.9;
+		var awesome = Math.random() > 0.5;
 		if(awesome) {
 			this.powerup = 6 + Math.floor(Math.random() * 3);
 			// this.points[where] = what;

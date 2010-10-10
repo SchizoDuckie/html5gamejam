@@ -32,7 +32,7 @@ var GameData= new Class({
 	},
 
 	recalcGrid:function() {
-		for(y = this.grid.length -1; y > 0; y--) {
+		for(y = this.grid.length -1; y >= 0; y--) {
 			var toBeRemoved = true;
 			var x = 0;
 				
@@ -96,21 +96,24 @@ var GameData= new Class({
 
 
 	// place the block in the internal grid on position x*y, since that waspossible.
-	placeShape: function(points, type,  x, y) {
+	placeShape: function(points, shape) {
+		var x = shape.x;
+		var y = shape.y;
 		if (y < 0) y = 0;
-		console.log('Place shape of type: '+type + "@  x: "+ x +"* y: " + y, points.join('|'));
+	//	console.log('Place shape of type: '+type + "@  x: "+ x +"* y: " + y, points.join('|'));
 		// loop all rotated points
-		
-		for(i=0; i< points.length; i++) {	 try
-		{
-		this.grid[y + points[i][1]][x + points[i][0]] = type;	
-		}
-		catch (e)
-		{
-			console.debug("Could not place shape at "+(y+points[i][1])+ ", "+ (x + points[i][0]));
-			//debugger;
-		}
-			
+
+		var type = shape.getType();
+		var l = points.length;
+
+		for(i=0; i<l; i++) {	 
+			try {
+				var data = (i == l-1 && shape.powerup)? shape.powerup : type;
+				this.grid[y + points[i][1]][x + points[i][0]] = data;	
+			} catch (e) {
+			//	console.debug("Could not place shape at "+(y+points[i][1])+ ", "+ (x + points[i][0]));
+				//debugger;
+			}			
 			
 			//console.log("Current grid: ", this.grid.join("\n"));
 		}
