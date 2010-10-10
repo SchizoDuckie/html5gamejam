@@ -17,23 +17,25 @@ Game = new Class({
 
 		this.data = new GameData();
 		this.getNewShape();
-
+		this.gameOver = false;
 	},
 
 	heartbeat: function() {
-		if(this.data.gameOver()) return;
+		if(this.gameOver) return;
 		if(this.data.canMove(this.activeShape, 0, -1))
 		{
 			this.activeShape.moveBy(0,-1);	
-			
 		} else {
-			this.data.placeShape(this.activeShape, 0, -1);
+			if(this.activeShape.y == this.data.getHeight()) {
+				this.gameOver = true;
+			}
+			this.data.placeShape(this.activeShape, 0,-1);
+
 			this.getNewShape()
 		}
 	},
 	
 	getNewShape: function() {
-		console.debug('creating new TetrisShape');
 		this.activeShape = new TetrisShape();
 	},
 

@@ -44,8 +44,7 @@ TouchTris = new Class({
 		var dir = e.dir;
 		var origin = e.origin;
 
-		console.log(origin)
-	
+		
 		var i = (origin.y < 512)? 0 : 1;
 		var game = this.games[i];
 		var action;
