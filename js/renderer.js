@@ -26,6 +26,10 @@ var Renderer = new Class({
 		this.context.drawImage(image, 0, 0, 768, 1024);
 	},
 
+	renderLine: function(line) {
+		this.context.drawImage(line, 0, 507, 768, 10);
+	},
+
 	setPane: function(pane) {
 		this.pane = pane;
 	},
@@ -70,6 +74,10 @@ var Renderer = new Class({
 			p = points[i];
 			x = p[0] * s.width;
 			y = p[1] * s.height;
+
+			if(shape.powerup && i == (l-1)) {
+				s = sprite.render(shape.powerup);
+			}
 
 			this.drawSprite(s, x, y);
 		}
