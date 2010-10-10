@@ -12,13 +12,15 @@ TouchTris = new Class({
 		var player1 = new Game({
 			width: 480,
 			height: 510,
-			orientation: 'top'
+			orientation: 'top',
+			pane: 'images/pane2.jpg'
 		});
 
 		var player2 = new Game({
 			width: 480,
 			height: 510,
-			orientation: 'bottom'
+			orientation: 'bottom',
+			pane: 'images/pane1.jpg'
 		});
 
 		this.addGame(player1);
@@ -26,7 +28,7 @@ TouchTris = new Class({
 
 		var canvas = document.getElementById("game");
 
-		this.renderer = new Renderer({
+		var renderer = this.renderer = new Renderer({
 			canvas: canvas
 		});
 
@@ -35,6 +37,12 @@ TouchTris = new Class({
 		});
 
 		$(document).addEvent('schwipe', this.handleSwipe.bind(this));
+
+		var background = new Image();
+		background.onload = function() {
+			renderer.renderBackground(this);
+		}
+		background.src = 'images/background.jpg';
 
 		this.start();
 	},
@@ -64,6 +72,7 @@ TouchTris = new Class({
 		}
 
 		game.performAction(action);
+		this.renderer.render(game);
 	},
 
 	addGame: function(game) {

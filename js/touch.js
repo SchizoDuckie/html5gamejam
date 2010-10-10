@@ -76,6 +76,9 @@ var Finger = new Class({
 	set: function(x, y) {
 		this.points = [{x:x, y:y}];
 		this.active = true;
+
+		clearInterval(this.timer);
+		this.timer = setInterval(this.check.bind(this), 100);
 	},
 
 	add:function(x,y) {
@@ -88,7 +91,11 @@ var Finger = new Class({
 		return this.points;
 	},
 
-	act: function() {
+	check: function() {
+		if(this.points.length <= 1 || !this.active) {
+			return;
+		}
+
 		var a = this.points[0];
 		var b = this.points[this.points.length -1];
 
@@ -96,16 +103,33 @@ var Finger = new Class({
 		var dy = b.y - a.y;
 
 		var dir;
+		var delta;
 
 		if(Math.abs(dx) > Math.abs(dy)) {
 			dir = dx > 0 ? 2 : 4
+			delta = Math.abs(dx);
 		} else {
 			dir = dy > 0 ? 3 : 1;
+			delta = Math.abs(dy);
 		}
 		
-		$(document).fireEvent('schwipe', { origin: a, direction: dir });
+		if(delta > 30) {
+			$(document).fireEvent('schwipe', { origin: a, direction: dir });
+			if(dir%2) {
+				this.clear();
+			}
+		}
+		
+	},
+
+	clear: function() {
+		clearInterval(this.timer);		
 		this.points = [];
 		this.active = false;
-		
+	},
+
+	act: function() {
+		this.check();
+		this.clear();	
 	}
 });

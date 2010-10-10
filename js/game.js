@@ -15,6 +15,9 @@ Game = new Class({
 			height: 30
 		});
 
+		this.pane = new Image();
+		this.pane.src = options.pane;
+
 		this.data = new GameData();
 		this.getNewShape();
 		this.gameOver = false;
@@ -37,12 +40,14 @@ Game = new Class({
 
 	performAction: function(type) {
 		var shape = this.activeShape;
+		var data = this.data;
+
 		switch (type) {
 			case 'left':
-				shape.moveBy(-1, 0);
+				data.canMove(shape, -1, 0) && shape.moveBy(-1, 0);
 			break;
 			case 'right':
-				shape.moveBy(1, 0);
+				data.canMove(shape, 1, 0) && shape.moveBy(1, 0);
 			break;
 			case 'rotate':
 				shape.rotate(1);

@@ -22,6 +22,14 @@ var Renderer = new Class({
 		return this.context;
 	},
 
+	renderBackground: function(image) {
+		this.context.drawImage(image, 0, 0, 768, 1024);
+	},
+
+	setPane: function(pane) {
+		this.pane = pane;
+	},
+
 	render: function(game) {
 		this.prerender(game);
 
@@ -86,8 +94,11 @@ var Renderer = new Class({
 			break;
 		}
 
-		ctx.clearRect(0,0,480,512);
-		ctx.fillRect(0,0,480,512);
+	//	ctx.clearRect(0,0,480,512);
+		if(game.pane.complete) {
+			ctx.drawImage(game.pane, 0,0,480,512);
+		}
+		
 	},
 
 	postrender: function(game) {
