@@ -52,7 +52,6 @@ TetrisShape = new Class({
 			// this.points[where] = what;
 		}
 		
-		this.moveTo(7,17);
 		this.getPoints();
 		
 		
@@ -81,7 +80,7 @@ TetrisShape = new Class({
 		this.y += y;
 	},
 
-	drop: function() {
+	drop: function() {3
 		this.y -= 1;
 	},
 

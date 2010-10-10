@@ -24,7 +24,7 @@ TouchTris = new Class({
 		});
 
 		this.addGame(player1);
-	//	this.addGame(player2);
+		this.addGame(player2);
 
 		var canvas = document.getElementById("game");
 

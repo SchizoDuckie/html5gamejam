@@ -19,6 +19,7 @@ Game = new Class({
 		this.pane.src = options.pane;
 
 		this.data = new GameData();
+		this.data.setHeight(17);
 		this.getNewShape();
 		this.gameOver = false;
 	},
@@ -62,13 +63,15 @@ Game = new Class({
 			break;
 			case 'down':
 			case 'drop':
-				shape.drop();
+				data.canMove(points, shape.x -1, shape.y) && shape.moveBy(0, -1);
+
 			break;
 		}
 	},
 	
 	getNewShape: function() {
 		this.activeShape = new TetrisShape();
+		this.activeShape.moveTo(7,this.data.getHeight());
 	},
 
 	getOrientation: function() {

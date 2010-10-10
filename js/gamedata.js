@@ -7,7 +7,7 @@ var GameData= new Class({
 	},
 
 	grid: [
-		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 1,3,2,5,5,3,2,1,6,1,0,1,1,1,1,1 ],
 		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
 		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
 		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
@@ -35,15 +35,26 @@ var GameData= new Class({
 		for(y = this.grid.length -1; y >= 0; y--) {
 			var toBeRemoved = true;
 			var x = 0;
-				
-			while (x < this.options.blocksWidth && toBeRemoved == true)
-			{
-				if(this.grid[y][x] == 0) {
-					toBeRemoved = false;
+			if(this.options.bloksHeight < y) {
+				tobeRemoved = true; 
+			}
+			else 
+			{	
+				while (x < this.options.blocksWidth && toBeRemoved == true)
+				{
+					if(this.grid[y][x] == 0) {
+						toBeRemoved = false;
+					}
+					x++;
 				}
-				x++;
-			}	
+			}
 			if(toBeRemoved) this.removeLine(y);
+		}
+		if(this.options.blocksHeight > this.grid.length) {
+			while(this.options.blocksHeight > this.grid.length) {
+				this.grid.unshift(this.getNewLine());
+			}
+		
 		}
 	},
 
@@ -61,7 +72,11 @@ var GameData= new Class({
 	// return howmany blocks are available for height
 	getHeight: function() {
 		return this.options.blocksHeight;
-
+	},
+	
+	setHeight: function(newHeight) {
+		this.options.blocksHeight = newHeight;
+		this.recalcGrid();
 	},
 
 	getData: function() {
@@ -85,7 +100,9 @@ var GameData= new Class({
 			
 			var xMove = x + points[i][0]; // x
 			var yMove = y + points[i][1]; // y;
-			console.log(('CanMove shape to  x: '+ xMove +"* y: " + yMove), points.join('|'));
+			if(yMove < 3 ) {
+				//console.log(('CanMove shape to  x: '+ xMove +"* y: " + yMove), points.join('|'));
+			}
 		
 			//console.debug(xMove+'x'+yMove+" " + points.join('|'));
 			//console.debug("CanMove: "+points[i]+" from "+y + "x"+x+" to "+(x + points[i][0])+ "x"+ (y+ points[i][1]));
@@ -111,7 +128,7 @@ var GameData= new Class({
 		}
 		catch (e)
 		{
-			console.debug("Could not place shape at "+(y+points[i][1])+ ", "+ (x + points[i][0]));
+//console.debug("Could not place shape at "+(y+points[i][1])+ ", "+ (x + points[i][0]));
 			//debugger;
 		}
 			
@@ -151,7 +168,7 @@ var GameData= new Class({
 		var ln = lineNumber || 0;
 		var removedLine = this.grid.splice(ln,1);
 		for(i=0;i<removedLine.length; i++) {
-			if(removedLine[i] > 5) { // fire special powerup event.
+			if(removedLine[i] > 4) { // fire special powerup event.
 				this.fireEvent('powerup', this.removedLine[i]);
 			}
 		}
