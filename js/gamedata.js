@@ -32,7 +32,7 @@ var GameData= new Class({
 	},
 
 	recalcGrid:function() {
-		for(y = this.grid.length -1; y > 0; y--) {
+		for(y = this.grid.length -1; y >= 0; y--) {
 			var toBeRemoved = true;
 			var x = 0;
 				
@@ -81,8 +81,12 @@ var GameData= new Class({
 		
 		for (i=0; i  < points.length; i++)
 		{
+			if (parseInt(y + points[i][1]) < 0) return false;
+			
 			var xMove = x + points[i][0]; // x
 			var yMove = y + points[i][1]; // y;
+			console.log(('CanMove shape to  x: '+ xMove +"* y: " + yMove), points.join('|'));
+		
 			//console.debug(xMove+'x'+yMove+" " + points.join('|'));
 			//console.debug("CanMove: "+points[i]+" from "+y + "x"+x+" to "+(x + points[i][0])+ "x"+ (y+ points[i][1]));
 			if(yMove < 0 || xMove == -1 || xMove >= this.getWidth() || (this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0)) {
@@ -98,7 +102,7 @@ var GameData= new Class({
 	// place the block in the internal grid on position x*y, since that waspossible.
 	placeShape: function(points, type,  x, y) {
 		if (y < 0) y = 0;
-		console.log('Place shape of type: '+type + "@  x: "+ x +"* y: " + y, points.join('|'));
+	//	console.log('Place shape of type: '+type + "@  x: "+ x +"* y: " + y, points.join('|'));
 		// loop all rotated points
 		
 		for(i=0; i< points.length; i++) {	 try
