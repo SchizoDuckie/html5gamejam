@@ -55,7 +55,7 @@ Game = new Class({
 			case 'up':
 			case 'rotate':
 				shape.rotate(1);
-				if(!data.canMove(shape.transform(shape.rotation), shape.x, shape.y)) {
+				if(!data.canMove(shape.transform(shape.rotation), shape.x, shape.y )) {
 					shape.rotate(-1);
 				}
 			break;

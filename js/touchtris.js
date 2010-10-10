@@ -50,7 +50,7 @@ TouchTris = new Class({
 
 	handleKeyPress: function(e) {
 		this.games[1].performAction(e.key);
-		e.cancel();
+		e.preventDefault();
 
 	},
 

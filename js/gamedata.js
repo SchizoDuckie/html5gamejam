@@ -83,7 +83,7 @@ var GameData= new Class({
 		{
 			var xMove = x + points[i][0]; // x
 			var yMove = y + points[i][1]; // y;
-			if(yMove == 0  || xMove == -1 || xMove > this.getWidth() || (this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0)) {
+			if(yMove <= 0  || xMove == -1 || xMove >= this.getWidth() || (this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0)) {
 				return false;	
 			}
 		}
@@ -96,15 +96,22 @@ var GameData= new Class({
 	// place the block in the internal grid on position x*y, since that waspossible.
 	placeShape: function(points, type,  x, y) {
 		
-		console.log('Place shape of type: '+type + " x: "+ x +" y: " + y, points.join('|'));
+		console.log('Place shape of type: '+type + "@  x: "+ x +"* y: " + y, points.join('|'));
 		// loop all rotated points
 		
-		for(i=0; i< points.length; i++) {	
-			this.grid[y + points[i][1]][x + points[i][0]] = type;
+		for(i=0; i< points.length; i++) {	 try
+		{
+		this.grid[y + points[i][1]][x + points[i][0]] = type;	
+		}
+		catch (e)
+		{
+			debugger;
+		}
+			
 			
 			//console.log("Current grid: ", this.grid.join("\n"));
 		}
-		//this.fireEvent('blockplaced');
+		this.fireEvent('blockdropped');
 		//$('grid').set('text', this.grid.join("\n"));
 		this.recalcGrid();
 	},
@@ -136,6 +143,11 @@ var GameData= new Class({
 	removeLine: function(lineNumber) {
 		var ln = lineNumber || 0;
 		var removedLine = this.grid.splice(ln,1);
+		for(i=0;i<removedLine.length; i++) {
+			if(removedLine[i] > 5) { // fire special powerup event.
+				this.fireEvent('powerup', this.removedLine[i]);
+			}
+		}
 		this.grid.push(this.getNewRow());
 	},
 
