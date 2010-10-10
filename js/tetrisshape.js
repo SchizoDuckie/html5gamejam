@@ -40,10 +40,17 @@ TetrisShape = new Class({
 		// randomize
 
 		var randomNumber = Math.floor(Math.random() * 5) +1;
+		
 		this.options.type = randomNumber;
 		this.points = this.shapeData[randomNumber].shape;
 		this.rotation = new Matrix();
 		this.angle = Math.PI / 2;
+
+		var awesome = Math.random() > 0.9;
+		if(awesome) {
+			this.powerup = 6 + Math.floor(Math.random() * 3);
+			// this.points[where] = what;
+		}
 		
 		this.moveTo(7,17);
 		this.getPoints();

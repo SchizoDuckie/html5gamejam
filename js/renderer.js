@@ -75,6 +75,10 @@ var Renderer = new Class({
 			x = p[0] * s.width;
 			y = p[1] * s.height;
 
+			if(shape.powerup && i == (l-1)) {
+				s = sprite.render(shape.powerup);
+			}
+
 			this.drawSprite(s, x, y);
 		}
 

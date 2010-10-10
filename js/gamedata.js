@@ -101,13 +101,17 @@ var GameData= new Class({
 	// place the block in the internal grid on position x*y, since that waspossible.
 	placeShape: function(Shape) {
 		var points = Shape.transform(Shape.rotation);
+		var power = Shape.powerup;
 		
 	//	console.log('Place shape of type: '+Shape.getType() + " x: "+ Shape.x +" y: " + Shape.y, points.join('|'));
 		// loop all rotated points
 		var curx = Shape.x;
 		var curry = Shape.y
-		for(i=0; i< points.length; i++) {	
-			this.grid[curry + points[i][1]][curx + points[i][0]] = Shape.getType();
+		var l = points.length;
+		var shapeType = Shape.getType();
+		for(i=0; i<l; i++) {
+			var type = (i == (l-1) && power)? power : shapeType;
+			this.grid[curry + points[i][1]][curx + points[i][0]] = type;
 			
 			//console.log("Current grid: ", this.grid.join("\n"));
 		}
