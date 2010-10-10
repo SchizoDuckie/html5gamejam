@@ -20,18 +20,18 @@ Game = new Class({
 		this.gameOver = false;
 	},
 
-	heartbeat: function() {
+	heartbeat: function(direction) {
 		if(this.gameOver) return;
-		if(this.data.canMove(this.activeShape, 0, -1))
+		var direction = direction  || 0 
+		if(this.data.canMove(this.activeShape, direction, -1))
 		{
-			this.activeShape.moveBy(0,-1);	
-		} else {
-			if(this.activeShape.y == this.data.getHeight()) {
-				this.gameOver = true;
-			}
-			this.data.placeShape(this.activeShape, 0,-1);
-
-			this.getNewShape()
+			this.activeShape.moveBy(direction,-1);	
+		}
+		else {
+			if(this.activeShape.y == 17) this.gameOver= true;	
+			//this.activeShape.moveBy(direction,-1);	
+			this.data.placeShape(this.activeShape);
+			this.getNewShape();
 		}
 	},
 
@@ -39,6 +39,7 @@ Game = new Class({
 		var shape = this.activeShape;
 		switch (type) {
 			case 'left':
+
 				shape.moveBy(-1, 0);
 			break;
 			case 'right':
