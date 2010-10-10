@@ -32,10 +32,10 @@ var GameData= new Class({
 	},
 
 	recalcGrid:function() {
-		for(y = this.grid.length -1; y >= 0; y--) {
+		for(var y = this.grid.length -1; y >= 0; y--) {
 			var toBeRemoved = true;
 			var x = 0;
-			if(this.options.bloksHeight < y) {
+			if(this.options.blocksHeight < y) {
 				tobeRemoved = true; 
 			}
 			else 
@@ -120,13 +120,19 @@ var GameData= new Class({
 	placeShape: function(points, shape) {
 		var x = shape.x;
 		var y = shape.y;
+		var type = shape.getType();
+		var powerup = shape.powerup;
+
 		if (y < 0) y = 0;
 	//	console.log('Place shape of type: '+type + "@  x: "+ x +"* y: " + y, points.join('|'));
 		// loop all rotated points
-		
-		for(i=0; i< points.length; i++) {	 try
+		var l = points.length;
+		var data;
+
+		for(i=0; i<l; i++) {	 try
 		{
-		this.grid[y + points[i][1]][x + points[i][0]] = type;	
+			data = (i == l-1 && powerup)? powerup : type;	
+			this.grid[y + points[i][1]][x + points[i][0]] = data;	
 		}
 		catch (e)
 		{

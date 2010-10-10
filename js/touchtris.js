@@ -94,14 +94,16 @@ TouchTris = new Class({
 	},
 
 	doPowerup: function(event) {
+		return;
+
 		var origin = event.game;
 		var total = 34;
-		var data1 = this.player1.getData();
-		var data2 = this.player2.getData();
+		var data1 = this.games[0].getData();
+		var data2 = this.games[1].getData();
 
 		try {
 			
-			if(origin == this.player1) {
+			if(origin == this.games[0]) {
 				var h = data1.getHeight() -1;
 				data1.setHeight(h);
 				data2.setHeight(34 - h);
