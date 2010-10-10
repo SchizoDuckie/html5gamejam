@@ -44,6 +44,9 @@ TouchTris = new Class({
 		}
 		background.src = 'images/background.jpg';
 
+		this.separator = new Image();
+		this.separator.src = 'images/line.png';
+
 		this.start();
 	},
 
@@ -100,6 +103,10 @@ TouchTris = new Class({
 
 	//	var fingers = this.touch.getFingers();
 	//	this.renderer.renderFingers(fingers);
+
+		if(this.separator.complete) {
+			this.renderer.renderLine(this.separator);
+		}
 	}
 
 });

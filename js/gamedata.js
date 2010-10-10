@@ -7,23 +7,23 @@ var GameData= new Class({
 	},
 
 	grid: [
-		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3 ],
-		[ 5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
-		[ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ]
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ],
+		[ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ]
 	],
 
 	initialize:function() {
@@ -75,10 +75,11 @@ var GameData= new Class({
 	 * get the this.
 	 *
 	 */
+
 	canMove: function(Shape, x, y) {
 		var fits = true;
 		var points = Shape.transform(Shape.rotation);
-		console.debug(Shape.y + ' : ' +points.join('|'));
+	//	console.debug(Shape.y + ' : ' +points.join('|'));
 		var nextX = Shape.x + x;
 		var nextY = Shape.y + y;
 		if(nextY <= 0) return false;
@@ -87,8 +88,8 @@ var GameData= new Class({
 		{
 			var xMove = nextX + points[i][0]; // x
 			var yMove = nextY + points[i][1]; // y;
-			if(yMove == 0  || Shape.y > this.getHeight() || this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] != 0) {
-				return false;	
+			if(yMove < 0  || xMove < 0 || xMove >= this.getWidth() || (this.grid[yMove] && this.grid[yMove][xMove])) {
+				return false;	 
 			}
 		}
 		return fits;
@@ -101,7 +102,7 @@ var GameData= new Class({
 	placeShape: function(Shape) {
 		var points = Shape.transform(Shape.rotation);
 		
-		console.log('Place shape of type: '+Shape.getType() + " x: "+ Shape.x +" y: " + Shape.y, points.join('|'));
+	//	console.log('Place shape of type: '+Shape.getType() + " x: "+ Shape.x +" y: " + Shape.y, points.join('|'));
 		// loop all rotated points
 		var curx = Shape.x;
 		var curry = Shape.y

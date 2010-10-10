@@ -26,6 +26,10 @@ var Renderer = new Class({
 		this.context.drawImage(image, 0, 0, 768, 1024);
 	},
 
+	renderLine: function(line) {
+		this.context.drawImage(line, 0, 507, 768, 10);
+	},
+
 	setPane: function(pane) {
 		this.pane = pane;
 	},

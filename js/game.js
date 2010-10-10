@@ -25,15 +25,14 @@ Game = new Class({
 
 	heartbeat: function() {
 		if(this.gameOver) return;
-		if(this.data.canMove(this.activeShape, 0, -1))
-		{
+		if(this.data.canMove(this.activeShape, 0, -1)) {
 			this.activeShape.moveBy(0,-1);	
 		} else {
 			if(this.activeShape.y == this.data.getHeight()) {
 				this.gameOver = true;
 			}
-			this.data.placeShape(this.activeShape, 0,-1);
-
+			
+			this.data.placeShape(this.activeShape, 0, 0);
 			this.getNewShape()
 		}
 	},
