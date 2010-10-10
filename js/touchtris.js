@@ -48,7 +48,12 @@ TouchTris = new Class({
 		this.separator = new Image();
 		this.separator.src = 'images/line.png';
 
-		this.start();
+		var game = this;
+		var splash = document.getElementById("splash");
+		splash.addEventListener('click', function() {
+			$(splash).fade('out');
+			game.start();
+		}, false);
 	},
 
 	handleKeyPress: function(e) {
@@ -112,7 +117,8 @@ TouchTris = new Class({
 	//	this.renderer.renderFingers(fingers);
 
 		if(this.separator.complete) {
-			this.renderer.renderLine(this.separator);
+			var y = (this.games[0].getData().getHeight() * 30) + 2
+			this.renderer.renderLine(this.separator, y);
 		}
 	}
 

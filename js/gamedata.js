@@ -105,7 +105,7 @@ var GameData= new Class({
 		}
 		catch (e)
 		{
-			debugger;
+		//	debugger;
 		}
 			
 			

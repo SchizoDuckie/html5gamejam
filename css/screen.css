@@ -10,4 +10,14 @@ body,html {
 		width:768;
 		height:1024;
 		margin:0;
-	}	
+	}
+
+	#splash {
+		position:absolute;
+		display:block;
+		width:768;
+		height:1024;
+		margin:0;
+		left:0;
+		top:0;
+	}

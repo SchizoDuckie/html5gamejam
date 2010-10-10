@@ -26,8 +26,8 @@ var Renderer = new Class({
 		this.context.drawImage(image, 0, 0, 768, 1024);
 	},
 
-	renderLine: function(line) {
-		this.context.drawImage(line, 0, 507, 768, 10);
+	renderLine: function(line, y) {
+		this.context.drawImage(line, 0, y - 5, 768, 10);
 	},
 
 	setPane: function(pane) {
@@ -91,14 +91,15 @@ var Renderer = new Class({
 		ctx.save();
 		
 		var type = game.getOrientation();
+		var h = (game.getData().getHeight() * 30) + 2;
 
 		switch (type) {
 			case 'top':
 				ctx.rotate(Math.PI);
-				ctx.translate(-624, -512);				
+				ctx.translate(-624, -h);				
 			break;
 			case 'bottom':
-				ctx.translate(144, 512);
+				ctx.translate(144, h);
 			break;
 		}
 
