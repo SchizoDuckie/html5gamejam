@@ -20,24 +20,26 @@ Game = new Class({
 
 		this.data = new GameData();
 		this.data.setHeight(17);
+		this.data.addEvent('powerup', this.doPowerup.bind(this));
 		this.getNewShape();
 		this.gameOver = false;
 	},
 
 	heartbeat: function() {
 		if(this.gameOver) return;
-		var points = this.activeShape.transform(this.activeShape.rotation);	
+		var shape =  this.activeShape;
+		var points = shape.transform(shape.rotation);	
 
-		if(this.data.canMove(points, this.activeShape.x, this.activeShape.y -1))
+		if(this.data.canMove(points, shape.x, shape.y -1))
 		{	
-			this.activeShape.moveBy(0,-1);	
+			shape.moveBy(0,-1);	
 		} 
 		else {
-			if(this.activeShape.y == this.data.getHeight()) {
+			if(shape.y == this.data.getHeight()) {
 				this.gameOver = true;
 			}
-			this.data.placeShape(points, this.activeShape.getType(), this.activeShape.x, this.activeShape.y);
-			this.fireEvent('shapeplaced', this.activeShape);
+			this.data.placeShape(points, shape);
+			this.fireEvent('shapeplaced', shape);
 			this.getNewShape()
 		}
 	},
@@ -67,6 +69,10 @@ Game = new Class({
 
 			break;
 		}
+	},
+
+	doPowerup:function(e) {
+		this.fireEvent('powerup', {game: this});
 	},
 	
 	getNewShape: function() {

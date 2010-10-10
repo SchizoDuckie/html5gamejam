@@ -117,7 +117,9 @@ var GameData= new Class({
 
 
 	// place the block in the internal grid on position x*y, since that waspossible.
-	placeShape: function(points, type,  x, y) {
+	placeShape: function(points, shape) {
+		var x = shape.x;
+		var y = shape.y;
 		if (y < 0) y = 0;
 	//	console.log('Place shape of type: '+type + "@  x: "+ x +"* y: " + y, points.join('|'));
 		// loop all rotated points
@@ -131,7 +133,6 @@ var GameData= new Class({
 //console.debug("Could not place shape at "+(y+points[i][1])+ ", "+ (x + points[i][0]));
 			//debugger;
 		}
-			
 			
 			//console.log("Current grid: ", this.grid.join("\n"));
 		}
@@ -166,10 +167,10 @@ var GameData= new Class({
 	// remove the a line in the grid, add a new line on top.
 	removeLine: function(lineNumber) {
 		var ln = lineNumber || 0;
-		var removedLine = this.grid.splice(ln,1);
-		for(i=0;i<removedLine.length; i++) {
+		var removedLine = this.grid.splice(ln,1)[0];
+		for(var i=0; i<removedLine.length; i++) {
 			if(removedLine[i] > 4) { // fire special powerup event.
-				this.fireEvent('powerup', this.removedLine[i]);
+				this.fireEvent('powerup', removedLine[i]);
 			}
 		}
 		this.grid.push(this.getNewRow());
