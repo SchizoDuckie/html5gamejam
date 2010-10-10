@@ -77,17 +77,19 @@ var GameData= new Class({
 	 */
 	canMove: function(points, x,y) {
 		var fits = true;
-		if(y <= 0) return false;
-
+		if (y<0) return false;
+		
 		for (i=0; i  < points.length; i++)
 		{
 			var xMove = x + points[i][0]; // x
 			var yMove = y + points[i][1]; // y;
-			if(yMove <= 0  || xMove == -1 || xMove >= this.getWidth() || (this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0)) {
-				return false;	
+			console.debug(xMove+'x'+yMove+" " + points.join('|'));
+			console.debug("CanMove: "+points[i]+" from "+y + "x"+x+" to "+(x + points[i][0])+ "x"+ (y+ points[i][1]));
+			if(yMove < 0 || xMove == -1 || xMove >= this.getWidth() || (this.grid[yMove] && this.grid[yMove][xMove] && this.grid[yMove][xMove] > 0)) {
+				fits = false;	
 			}
 		}
-		return true;
+		return fits;
 
 		// fire shape drop event if y -1 == collision
 	},
@@ -95,7 +97,7 @@ var GameData= new Class({
 
 	// place the block in the internal grid on position x*y, since that waspossible.
 	placeShape: function(points, type,  x, y) {
-		
+		if (y < 0) y = 0;
 		console.log('Place shape of type: '+type + "@  x: "+ x +"* y: " + y, points.join('|'));
 		// loop all rotated points
 		
@@ -105,7 +107,8 @@ var GameData= new Class({
 		}
 		catch (e)
 		{
-			debugger;
+			console.debug("Could not place shape at "+(y+points[i][1])+ ", "+ (x + points[i][0]));
+			//debugger;
 		}
 			
 			
