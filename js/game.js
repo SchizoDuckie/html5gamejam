@@ -51,12 +51,15 @@ Game = new Class({
 
 		switch (type) {
 			case 'left':
+			case 'a':
 				data.canMove(points, shape.x -1, shape.y) && shape.moveBy(-1, 0);
 			break;
 			case 'right':
+			case 'd':
 				data.canMove(points, shape.x +1, shape.y) && shape.moveBy(1, 0);
 			break;
 			case 'up':
+			case 'w':
 			case 'rotate':
 				shape.rotate(1);
 				if(!data.canMove(shape.transform(shape.rotation), shape.x, shape.y )) {
@@ -65,6 +68,7 @@ Game = new Class({
 			break;
 			case 'down':
 			case 'drop':
+			case 's':
 				data.canMove(points, shape.x -1, shape.y) && shape.moveBy(0, -1);
 
 			break;

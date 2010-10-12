@@ -60,7 +60,13 @@ TouchTris = new Class({
 	},
 
 	handleKeyPress: function(e) {
-		this.games[1].performAction(e.key);
+		if(e.key == 'a'  || e.key == 's' || e.key == 'd' || e.key == 'w') {
+			this.games[0].performAction(e.key);
+		
+		}
+		else {
+			this.games[1].performAction(e.key);
+		}
 		e.preventDefault();
 
 	},
