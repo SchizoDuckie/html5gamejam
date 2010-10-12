@@ -132,6 +132,16 @@ Tetris.ShapeFactory = new Class({
 		[[-1,0], [0,-1],[0,0], [1,0]],
 		[[-1,-1],[0,-1],[0,0], [1,0]]
 	],
+
+	colors: [
+		'#00f0f0',
+		'#0000f0',
+		'#f0a000',
+		'#f0f000',
+		'#00f000',
+		'#a000f0',
+		'#f00000'
+	],
 		
 	initialize: function(options) {
 		this.setOptions(options);
@@ -140,7 +150,7 @@ Tetris.ShapeFactory = new Class({
 	getShape: function() {
 		var l = this.shapes.length;
 		var r = Math.floor(Math.random() * l);
-		return new Tetris.Shape(this.shapes[r]);
+		return new Tetris.Shape(this.shapes[r], this.colors[r]);
 	}
 });
 
@@ -153,11 +163,11 @@ Tetris.ShapeFactory = new Class({
 Tetris.Shape = new Class({
 	Implements: [Events],
 
-	initialize: function(points) {
+	initialize: function(points, sprite) {
 		this.points = points;
 		this.rotation = new Matrix();
 		this.position = new Matrix();
-		this.sprite = '#000000';
+		this.sprite = sprite;
 		this.angle = Math.PI / -2;
 	},
 
@@ -240,7 +250,7 @@ Tetris.Model = new Class({
 		for(var d,p,i=0; i<l; i++) {
 			p = points[i];
 			d = p[0] + (p[1] * this.width);
-			this.data[d] = 'gray';
+			this.data[d] = shape.sprite;
 		}
 	},
 
