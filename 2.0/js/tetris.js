@@ -5,10 +5,21 @@
 
 $(window).addEvent('domready', function() {
 
+
+	var arrowKeys = new Tetris.Keyboard({ 
+		map:{ 37: 'left', 38: 'rotate', 39: 'right', 40: 'drop' }
+	});
+
+	var wasdKeys = new Tetris.Keyboard({ 
+		map:{ 65: 'left', 87: 'rotate', 68: 'right', 83: 'drop' }
+	});
+
+	var mouse = new Tetris.Mouse();
+
 	var player1 = new Tetris({
 		target: document.body,
 		renderer: Tetris.CanvasRenderer,
-		factory: Tetris.ShapeFactory,
+		controller: arrowKeys,
 		cols: 11,
 		rows: 15,
 		width: 220,
@@ -19,12 +30,13 @@ $(window).addEvent('domready', function() {
 	var player2 = new Tetris({
 		target: document.body,
 		renderer: Tetris.CanvasRenderer,
-		factory: Tetris.ShapeFactory,
+		controller: wasdKeys,
 		cols: 11,
 		rows: 15,
 		width: 220,
 		height: 300
 	});
+
 
 });
 
@@ -44,12 +56,16 @@ var Tetris = new Class({
 		var Renderer = options.renderer;
 		this.renderer = new Renderer(options);
 
-		var Factory = options.factory;
-		this.factory = new Factory(options);
+		this.factory = new Tetris.ShapeFactory(options);
 
-		document.addEventListener('keyup', this.handleKeyup.bind(this), false);
+		this.controller = options.controller;
+		this.controller.setGame(this);
 		
 		this.start();
+	},
+
+	getContainer: function() {
+		return this.renderer.getContainer();
 	},
 
 	resizeGame: function(w, h) {
@@ -63,7 +79,7 @@ var Tetris = new Class({
 	newShape: function() {
 		this.shape = this.factory.getShape();
 		var x = Math.floor(this.model.width / 2);
-		this.shape.moveTo(x, 0);
+		this.shape.moveTo(x, 1);
 	},
 
 	start: function() {
@@ -72,34 +88,34 @@ var Tetris = new Class({
 		this.timer = setInterval(this.heartbeat.bind(this), 1000);
 	},
 
-	handleKeyup: function(e) {
-		var code = e.keyCode;
-		
-		switch (code) {
-			case 37:
+	handleCommand: function(type) {
+		switch (type) {
+			case 'left':
 				if(this.model.fits(this.shape.movedBy(-1,0))) {
 					this.shape.moveBy(-1, 0);
 				}
 			break;
-			case 38:
+			case 'rotate':
 				if(this.model.fits(this.shape.rotatedBy(1))) {
 					this.shape.rotate(1);
 				}
 			break;
-			case 39:
+			case 'right':
 				if(this.model.fits(this.shape.movedBy(1,0))) {
 					this.shape.moveBy(1, 0);
 				}
 			break;
-			case 40:
-				if(this.model.fits(this.shape.movedBy(0,2))) {
-					this.shape.moveBy(0,2);
+			case 'drop':
+				while(this.model.fits(this.shape.movedBy(0,1))) {
+					this.shape.moveBy(0,1);
 				}
 			break;
 		}
 
 		this.renderer.draw(this.model, this.shape);
 	},
+
+	
 
 	heartbeat: function() {
 		if(this.model.fits(this.shape.movedBy(0,1))) {
@@ -108,9 +124,104 @@ var Tetris = new Class({
 			this.model.put(this.shape);
 			this.newShape();
 		}
-		
 
 		this.renderer.draw(this.model, this.shape);
+	}
+});
+
+
+/**
+ * Keyboard controller
+ * 
+ */
+
+Tetris.Keyboard = new Class({
+	Implements: [Events, Options],
+
+	initialize: function(options) {
+		this.setOptions(options);
+	},
+
+	setGame: function(game) {
+		this.game = game;
+		document.addEventListener('keyup', this.handleKeyup.bind(this), false);
+	},
+
+	handleKeyup: function(e) {
+		var command = this.options.map[e.keyCode];
+		if(command) {
+			this.game.handleCommand(command);
+		}
+	},
+});
+
+
+/**
+ * Mouse controller
+ * 
+ */
+
+Tetris.Mouse = new Class({
+	Implements: [Events, Options],
+
+	initialize: function(options) {
+		this.setOptions(options);
+	},
+
+	setGame: function(game) {
+		this.game = game;
+		var target = game.getContainer();
+		target.addEventListener('click', this.handleClick.bind(this), false);
+	},
+
+	handleClick: function(e) {
+		console.log(e);
+	}
+});
+
+
+/**
+ * Touch controller
+ * 
+ */
+
+Tetris.Touch = new Class({
+	Implements: [Events, Options],
+
+	initialize: function(options) {
+		this.setOption(options);
+	},
+
+	setGame: function(game) {
+		this.game = game;
+		var target = game.getContainer();
+		target.addEventListener('touchstart', this);
+		target.addEventListener('touchmove', this);
+		target.addEventListener('touchend', this);
+	},
+
+	handleEvent: function(e) {
+		console.log(e)
+	}
+});
+
+
+/**
+ * Remote controller
+ * 
+ */
+
+Tetris.Remote = new Class({
+	Implements: [Events, Options],
+
+	initialize: function(options) {
+		this.setOption(options);
+	},
+
+	setGame: function(game) {
+		this.game = game;
+		
+		// comet / socket / etc
 	}
 });
 
@@ -195,9 +306,6 @@ Tetris.Shape = new Class({
 		return this.transform(this.position.multiply(rotation.base));
 	},
 
-	drop: function() {
-	},
-
 	getPoints: function() {
 		return this.transform(this.position);
 	},
@@ -246,22 +354,51 @@ Tetris.Model = new Class({
 
 	put: function(shape) {
 		var points = shape.getPoints();
+		
+		var min = this.total;
+		var max = 0;
+
 		var l = points.length;
-		for(var d,p,i=0; i<l; i++) {
+		for(var x,y,d,p,i=0; i<l; i++) {
 			p = points[i];
-			d = p[0] + (p[1] * this.width);
-			this.data[d] = shape.sprite;
+			x = p[0];
+			y = p[1] * this.width;
+
+			min = Math.min(min, y);
+			max = Math.max(max, y + this.width);
+
+			this.data[x + y] = shape.sprite;
 		}
+
+		return this.check(min, max);
+	},
+
+	check: function(min, max) {
+		var w = this.width;
+		for(var i=min; i<max; i++) {
+			if(!this.data[i]) {
+				i = (i + w) - i % w -1;
+				continue;
+			}
+
+			if((i + 1) % w == 0) {
+				var at = i - w + 1;
+				this.data.splice(at, w);
+				this.data.unshift.apply(this.data, new Array(w));
+			}
+		}
+
 	},
 
 	fits: function(points) {
 		var l = points.length;
+		var r = this.width - 1;
 		for(var d,p,x,y,i=0; i<l; i++) {
 			p = points[i];
 			x = p[0];
 			y = p[1];
 			d = x + (y * this.width);
-			if(x < 0 || x > this.width-1 || d >= this.total || this.data[d]) {
+			if(x < 0 || x > r || d >= this.total || this.data[d]) {
 				return false;
 			}
 		}
@@ -284,7 +421,12 @@ Tetris.CanvasRenderer = new Class({
 			document.createElement('canvas')
 		);
 
-		this.resizeTo(options.width, options.height)
+		this.resizeTo(options.width, options.height);
+	},
+
+	// interface requirement, must return the root node of the particular renderer
+	getContainer: function() {
+		return this.canvas;
 	},
 
 	draw: function(model, shape) {
@@ -302,12 +444,11 @@ Tetris.CanvasRenderer = new Class({
 			insert[at] = shape.sprite;
 		}
 
-		var l = c * r; // sprite amount
-		var sw = w / c; // sprite width
-		var sh = h / r; // sprite height
+		var l = c * r;
+		var sw = w / c;
+		var sh = h / r;
 
 		var ctx = this.context;
-
 		ctx.fillStyle = '#f0f0f0';
 
 		for(var x, y, i=0; i<l; i++) {
@@ -315,7 +456,6 @@ Tetris.CanvasRenderer = new Class({
 			y = Math.floor(i / c) * sh;
 
 			ctx.fillStyle = insert[i] || model.data[i] || '#f0f0f0';
-
 			ctx.fillRect(x, y, 19, 19);
 		}
 	},
@@ -386,3 +526,4 @@ Matrix.prototype = {
 		]);
 	}
 }
+
