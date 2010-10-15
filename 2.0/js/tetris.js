@@ -19,9 +19,10 @@ $(window).addEvent('domready', function() {
 		}
 	});
 
+
 	var player1 = new Tetris({
 		target: document.body,
-		renderer: Tetris.CanvasRenderer,
+		renderer: Browser.Engine.name == 'trident' ? Tetris.TextRenderer : Tetris.CanvasRenderer,
 		controller: arrowKeys,
 		cols: 10,
 		rows: 20,
@@ -233,11 +234,13 @@ var Tetris = (function() {
 
 		setGame: function(game) {
 			this.game = game;
-			document.addEventListener('keydown', this.handleKeyup.bind(this), false);
+			// let's try to keep this at least cross-browser :P
+			$(document).addEvent('keydown',  this.handleKeyup.bind(this));
 		},
 
 		handleKeyup: function(e) {
-			var command = this.options.map[e.keyCode];
+
+			var command = this.options.map[e.code];
 			if(command) {
 				this.game.handleCommand(command);
 			}
@@ -672,7 +675,7 @@ var Tetris = (function() {
 
 		initialize: function(options) {
 			this.setOptions(options);
-			this.node = document.createElement('div'); 
+			this.node = document.createElement('pre'); 
 			this.node.className = 'textRenderer';
 			options.target.appendChild(this.node);
 
@@ -706,7 +709,7 @@ var Tetris = (function() {
 			for(var i=0; i<l; i++) {
 				out[i] = this.getChar(insert[i] || model.data[i] || 0);
 				if((i + 1) % c == 0) {
-					out[i] += '\n';
+					out[i] += "<br>";
 				}
 			}
 
