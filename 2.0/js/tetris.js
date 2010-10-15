@@ -678,7 +678,7 @@ var Tetris = (function() {
 			this.node = document.createElement('pre'); 
 			this.node.className = 'textRenderer';
 			options.target.appendChild(this.node);
-
+			new Element('p').addClass('ieFails').set('html', 'You have an inferior browser. Now bow to our ASCII Renderer!').injectInside(document.body);
 			this.resizeTo(options.width, options.height);
 		},
 
