@@ -7,36 +7,27 @@ $(window).addEvent('domready', function() {
 
 
 	var arrowKeys = new Tetris.Keyboard({ 
-		map:{ 37: 'left', 38: 'rotate', 39: 'right', 40: 'drop' }
+		map:{ 
+			36: Tetris.ROTATE_LEFT,
+			33: Tetris.ROTATE_RIGHT,
+			38: Tetris.ROTATE_RIGHT,
+			37: Tetris.MOVE_LEFT, 
+			39: Tetris.MOVE_RIGHT,
+			40: Tetris.MOVE_DOWN,
+			12: Tetris.DROP,
+			32: Tetris.DROP
+		}
 	});
-
-	var wasdKeys = new Tetris.Keyboard({ 
-		map:{ 65: 'left', 87: 'rotate', 68: 'right', 83: 'drop' }
-	});
-
-	var mouse = new Tetris.Mouse();
 
 	var player1 = new Tetris({
 		target: document.body,
 		renderer: Tetris.CanvasRenderer,
 		controller: arrowKeys,
-		cols: 11,
-		rows: 15,
-		width: 220,
-		height: 300
+		cols: 10,
+		rows: 20,
+		width: 200,
+		height: 400
 	});
-
-
-	var player2 = new Tetris({
-		target: document.body,
-		renderer: Tetris.TextRenderer,
-		controller: wasdKeys,
-		cols: 11,
-		rows: 15,
-		width: 220,
-		height: 300
-	});
-
 
 });
 
@@ -79,6 +70,12 @@ var Tetris = (function() {
 			this.reset();
 		},
 
+
+		kicks: {
+			left: [[-1, 0],[-1, 1],[0,-2],[-1,-2]],
+			right: [[1, 0],[1, 1],[0,-2],[1,-2]]
+		},
+
 		getContainer: function() {
 			return this.renderer.getContainer();
 		},
@@ -101,10 +98,11 @@ var Tetris = (function() {
 
 		newShape: function() {
 			this.shape = this.factory.getShape();
+			
 			var x = _floor(this.model.width / 2);
 			this.shape.moveTo(x, 1);
 
-			if(!this.model.fits(this.shape.getPoints())) {
+			if(!this.model.fits(this.shape)) {
 				this.stop();
 			}
 		},
@@ -132,42 +130,93 @@ var Tetris = (function() {
 
 		handleCommand: function(type) {
 			switch (type) {
-				case 'left':
-					if(this.model.fits(this.shape.movedBy(-1,0))) {
-						this.shape.moveBy(-1, 0);
-					}
-				break;
-				case 'rotate':
-					if(this.model.fits(this.shape.rotatedBy(1))) {
-						this.shape.rotate(1);
-					}
-				break;
-				case 'right':
-					if(this.model.fits(this.shape.movedBy(1,0))) {
-						this.shape.moveBy(1, 0);
-					}
-				break;
-				case 'drop':
-					while(this.model.fits(this.shape.movedBy(0,1))) {
-						this.shape.moveBy(0,1);
-					}
-				break;
+				case Tetris.MOVE_LEFT:		this.moveShape(-1, 0);	break;
+				case Tetris.MOVE_RIGHT:		this.moveShape(1, 0);	break;
+				case Tetris.MOVE_DOWN:		this.moveShape(0, 1);	break;
+				case Tetris.ROTATE_LEFT:	this.rotateShape(-1);	break;
+				case Tetris.ROTATE_RIGHT:	this.rotateShape(1);	break;				
+				case Tetris.DROP:			this.dropShape();		break;
 			}
+			this.update();
+		},
 
-			this.renderer.draw(this.model, this.shape);
+		moveShape: function(x, y) {
+			var shape = this.shape;
+			if(this.model.fits(shape.movedBy(x, y))) {
+				shape.moveBy(x, y);
+			}
+		},
+
+		rotateShape: function(dir) {
+			var model = this.model;
+			var shape = this.shape;
+			var rotated = shape.rotatedBy(dir);
+
+			if(model.fits(rotated)) {
+				shape.rotateBy(dir);
+			} else {
+				var type = (dir > 0)? 'right' : 'left';
+				var kicks = this.kicks[type];
+				
+				var l = kicks.length;
+				for(var kicked,k,x,y,i=0; i<l; i++) {
+					k = kicks[i];
+					x = k[0];
+					y = k[1];
+
+					kicked = rotated.movedBy(x, y);
+					if(model.fits(kicked)) {
+						shape.rotateBy(1);
+						shape.moveBy(x, y);
+						break;
+					}
+				}
+			}
+		},
+
+		dropShape: function() {
+			var shape = this.shape;
+			while(this.model.fits(shape.movedBy(0,1))) {
+				shape.moveBy(0,1);
+			}
 		},
 
 		heartbeat: function() {
-			if(this.model.fits(this.shape.movedBy(0,1))) {
-				this.shape.moveBy(0, 1);
+			var model = this.model;
+			var shape = this.shape;
+			
+			if(model.fits(shape.movedBy(0,1))) {
+				shape.moveBy(0, 1);
 			} else {
-				this.model.put(this.shape);
+				model.put(shape);
 				this.newShape();
 			}
 
-			this.renderer.draw(this.model, this.shape);
+			this.update();
+		},
+
+		update: function() {
+			var model = this.model;
+			var shape = this.shape;
+			var ghost;
+
+			ghost = shape.clone();
+			while(model.fits(ghost.movedBy(0,1))) {
+				ghost.moveBy(0,1);
+			}
+
+			this.renderer.draw(model, shape, ghost);
 		}
 	});
+
+
+	Tetris.ROTATE_LEFT = 1;
+	Tetris.ROTATE_RIGHT = 2;
+	Tetris.MOVE_LEFT  = 3;
+	Tetris.MOVE_RIGHT = 4
+	Tetris.MOVE_DOWN  = 5;
+	Tetris.DROP = 6;
+
 
 
 	/**
@@ -306,10 +355,10 @@ var Tetris = (function() {
 	Tetris.Shape = new Class({
 		Implements: [Events],
 
-		initialize: function(points, data) {
+		initialize: function(points, data, position) {
 			this.points = points;
 			this.rotation = new Matrix();
-			this.position = new Matrix();
+			this.position = position || new Matrix();
 			this.data = data;
 			this.angle = PI / -2;
 		},
@@ -317,25 +366,26 @@ var Tetris = (function() {
 		moveTo: function(x, y) {
 			this.position = new Matrix();
 			this.position = this.position.translate(x, y);
+			return this;
 		},
 
 		moveBy: function(x, y) {
 			this.position = this.position.translate(x, y);
+			return this;
+		},
+
+		rotateBy: function(dir) {
+			var rotation = this.rotation.rotate(this.angle * dir);
+			this.points = this.transform(rotation);
+			return this;
 		},
 
 		movedBy:function(x, y) {
-			var position = this.position.translate(x, y);
-			return this.transform(position);
-		},
-
-		rotate: function(dir) {
-			var rotation = this.rotation.rotate(this.angle * dir);
-			this.points = this.transform(rotation);
+			return this.clone().moveBy(x, y);
 		},
 
 		rotatedBy: function(dir) {
-			var rotation = this.rotation.rotate(this.angle * dir);
-			return this.transform(this.position.multiply(rotation.base));
+			return this.clone().rotateBy(dir);
 		},
 
 		getPoints: function() {
@@ -344,6 +394,10 @@ var Tetris = (function() {
 
 		getData: function() {
 			return this.data;
+		},
+
+		clone: function() {
+			return new Tetris.Shape(this.points, this.data, this.position);
 		},
 
 		transform: function(matrix) {
@@ -427,7 +481,8 @@ var Tetris = (function() {
 
 		},
 
-		fits: function(points) {
+		fits: function(shape) {
+			var points = shape.getPoints();
 			var l = points.length;
 			var r = this.width - 1;
 			for(var d,p,x,y,i=0; i<l; i++) {
@@ -528,40 +583,64 @@ var Tetris = (function() {
 			return this.sprites[data];
 		},
 
-		draw: function(model, shape) {
+		draw: function(model, shape, ghost) {
+			this.model = model;
+			this.spriteWidth = this.canvas.width / model.width;
+			this.spriteHeight = this.canvas.height / model.height;
+
+			this.drawModel(model);
+			this.drawGhost(ghost);
+			this.drawShape(shape);
+		},
+
+
+		drawModel: function(model) {
+			var canvas = this.canvas;
+			var sw = this.spriteWidth;
+			var sh = this.spriteHeight;
 			var c = model.width;
-			var r = model.height;
-			var w = this.canvas.width;
-			var h = this.canvas.height;
-
-			var points = shape.getPoints();
-			var data = shape.getData();
-			var insert = [];
-			var l = points.length;
-			for(var p,i=0; i<l; i++) {
-				p = points[i];
-				var at = p[0] + (p[1] * c);
-				insert[at] = data;
-			}
-
-			var l = c * r;
-			var sw = w / c;
-			var sh = h / r;
 
 			var ctx = this.context;
-			ctx.clearRect(0, 0, w, h);
-			ctx.shadowBlur = sw / 3;
-			ctx.shadowColor = 'rgba(0,0,0,0.5)'
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			
-			for(var x, y, sprite, i=0; i<l; i++) {
+			var l = model.total;
+			for(var x, y, d, sprite, i=0; i<l; i++) {
 				x = (i % c) * sw;
 				y = _floor(i / c) * sh;
-
-				sprite = this.getSprite(insert[i] || model.data[i] || 0);
+				d = model.data[i];
+				
+				sprite = this.getSprite(d);
 				if(sprite) {
 					ctx.drawImage(sprite, x, y, sw, sh);
 				}
 			}
+		},
+
+		drawShape: function(shape) {
+			var sw = this.spriteWidth;
+			var sh = this.spriteHeight;
+			var c = this.model.width;
+			var ctx = this.context;
+
+			var points = shape.getPoints();
+			var data = shape.getData();
+			var sprite = this.getSprite(data);
+			
+			var l = points.length;
+			for(var p,i=0; i<l; i++) {
+				p = points[i];				
+				x = (p[0] % c) * sw;
+				y = p[1] * sh;
+				ctx.drawImage(sprite, x, y, sw, sh);
+			}
+		},
+
+		drawGhost: function(ghost) {
+			var ctx = this.context;
+			ctx.save();
+			ctx.globalAlpha = 0.15;
+			this.drawShape(ghost);
+			ctx.restore();
 		},
 
 		resizeTo: function(w, h) {
@@ -697,8 +776,7 @@ var Tetris = (function() {
 				-sin, cos, 0
 			]);
 		}
-	}
-
+	};
 
 	return Tetris;
 
