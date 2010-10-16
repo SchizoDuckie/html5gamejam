@@ -3,38 +3,7 @@
  *
  */
 
-$(window).addEvent('domready', function() {
-
-
-	var arrowKeys = new Tetris.Keyboard({ 
-		map:{ 
-			65: Tetris.ROTATE_LEFT,
-			36: Tetris.ROTATE_LEFT,
-			33: Tetris.ROTATE_RIGHT,
-			38: Tetris.ROTATE_RIGHT,
-			83: Tetris.ROTATE_RIGHT,
-			37: Tetris.MOVE_LEFT, 
-			39: Tetris.MOVE_RIGHT,
-			40: Tetris.MOVE_DOWN,
-			12: Tetris.DROP,
-			32: Tetris.DROP
-		}
-	});
-
-
-	var player1 = new Tetris({
-		target: document.body,
-		renderer: Browser.Engine.name == 'trident' ? Tetris.TextRenderer : Tetris.CanvasRenderer,
-		controller: arrowKeys,
-		cols: 10,
-		rows: 20,
-		width: 200,
-		height: 400
-	});
-
-});
-
-var Tetris = (function() {
+window.Tetris = (function() {
 
 	/**
 	 * Performance
@@ -238,7 +207,7 @@ var Tetris = (function() {
 		setGame: function(game) {
 			this.game = game;
 			// let's try to keep this at least cross-browser :P
-			$(document).addEvent('keydown',  this.handleKeyup.bind(this));
+			$(window).addEvent('keydown',  this.handleKeyup.bind(this));
 		},
 
 		handleKeyup: function(e) {
@@ -247,7 +216,7 @@ var Tetris = (function() {
 			if(command) {
 				this.game.handleCommand(command);
 			}
-		},
+		}
 	});
 
 
