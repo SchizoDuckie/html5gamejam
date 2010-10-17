@@ -91,10 +91,7 @@ window.Tetris = (function() {
 
 		stop: function() {
 			clearInterval(this.timer);
-			this.getContainer().adopt(new Element('button', {value: 'Game Over, Reset?'}).addEvent('click', function(e) {
-				this.reset.bind(this);
-				$(e.target).dispose();
-			}));
+			if(confirm('again?!')) this.reset();
 		},
 
 		remove: function() {
@@ -284,6 +281,9 @@ window.Tetris = (function() {
 
 		setGame: function(game) {
 			this.game = game;
+			this.game.stop = function() {
+				
+			}	
 			game.stop();
 			game.heartbeat = function() {};
 			this.game.addEvent('newData', this.drawRemote.bind(this));
