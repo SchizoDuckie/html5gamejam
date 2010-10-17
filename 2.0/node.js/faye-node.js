@@ -416,8 +416,11 @@ Faye.extend(Faye.Channel, {
   SERVICE:      'service',
   
   isValid: function(name) {
-    return Faye.Grammar.CHANNEL_NAME.test(name) ||
+	
+	var result = Faye.Grammar.CHANNEL_NAME.test(name) ||
            Faye.Grammar.CHANNEL_PATTERN.test(name);
+	if(!result) console.log("[FAYE-ERROR]: Not a valid channel name! ", name);
+	return result;
   },
   
   parse: function(name) {
