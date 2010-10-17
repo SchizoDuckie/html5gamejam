@@ -164,7 +164,6 @@ window.Tetris = (function() {
 				this.newShape();
 				this.fireEvent('drop', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData()}); 
 			}
-
 			this.update();
 		},
 
@@ -483,6 +482,11 @@ window.Tetris = (function() {
 
 		check: function(min, max) {
 			var w = this.width;
+			if(!this.newLine) {
+				this.newLine =[];
+				for(i=0;i<w;i++){ this.newLine[i]=0; } 
+			}
+
 			for(var i=min; i<max; i++) {
 				if(!this.data[i]) {
 					i = (i + w) - (i % w) -1;
@@ -492,7 +496,7 @@ window.Tetris = (function() {
 				if((i + 1) % w == 0) {
 					var at = i - w + 1;
 					this.data.splice(at, w);
-					this.data.unshift.apply(this.data, new Array(w));
+					this.data.unshift.apply(this.data, this.newLine);
 				}
 			}
 
