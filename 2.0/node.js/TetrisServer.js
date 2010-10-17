@@ -48,7 +48,7 @@ GameMaster = new Class({
 	},
 
 	handleIncoming: function(message, callback) {
-		console.log("Incoming message for channel: "+message.channel);
+		//console.log("Incoming message for channel: "+message.channel);
 
 		var channel = message.channel.split('/');
 		channel.shift();
@@ -57,7 +57,7 @@ GameMaster = new Class({
 			case 'login':
 				switch(channel[1]) {
 					case 'canihazlogin':
-						console.log("User wants to login: ", JSON.encode(message));
+						console.log("User wants to login: "+message.data.username);
 						if(message.data.username && !this.users[message.data.username]) 
 							{
 								this.users[message.data.username] = {
@@ -81,13 +81,13 @@ GameMaster = new Class({
 			case 'game':
 				switch(channel[1]){ 
 					case 'getuserlist':
-						console.log("publishing users", JSON.encode(this.users));
-						FayeClient.publish('/game/userlist', {message:'Fresh userlist', users: this.users });
+						console.log("publishing users. "+this.getOnlineCount()+' online.');
+
+						FayeClient.publish('/game/userlist', {message: this.getOnlineCount()+' users online. Enjoy!', users: this.users });
 					break;
 					case 'chat':
-						console.log(message);
 						message.data.message = message.data.message.replace('<', '&lt;').replace('>', '&gt;');
-						console.log("Chat message: ", message.data.message);
+						console.log("[CHAT]: "+message.data.username,':', message.data.message);
 					break;
 					case 'savestate':
 						message.data.username = channel[2];
@@ -114,10 +114,27 @@ GameMaster = new Class({
 		callback(message);
 	},
 
+	getOnlineCount:function() {
+		 var obj = this.users, count = 0;
+		  for (var prop in obj) {
+			if (obj.hasOwnProperty(prop)) {
+			  count++;
+			}
+		  }
+
+
+		return count;
+	},
+
 	startPublishingGameStates: function() {
-		this.startedPublishing = true;
-		FayeClient.publish('/game/states', this.getGameStates());
-		setTimeout(this.startPublishingGameStates.bind(this), 850);
+		if(this.getOnlineCount() > 0) {
+			this.startedPublishing = true;
+			FayeClient.publish('/game/states', this.getGameStates());
+			setTimeout(this.startPublishingGameStates.bind(this), 850);
+		}
+		else {
+			this.startedPublishing = false;
+		}
 	},
 
 	setGameState: function(message) {
@@ -128,11 +145,20 @@ GameMaster = new Class({
 		if(!this.games[message.username] || message.timestamp){
 			if(this.games[message.username] && this.games[message.username].timestamp < message.timestamp) {
 				this.games[message.username] = message;
-			} else {
-			this.games[message.username] = message;
+				if(!this.users[message.username]) {
+					this.users[message.username] = this.users[message.username] = {
+									username: message.username,
+									browser: ['uknown',0],
+									lastSeen: new Date().getTime()
+								};
+				}
+			}
+			else {
+				this.games[message.username] = message;
 			}
 		}
 		if(!this.startedPublishing) { this.startPublishingGameStates(); }
+		console.log("Logged game state for "+message.username);
 		new CliRenderer(message.shape.split('|'), message.model.split(''));
 	},
 
@@ -146,7 +172,7 @@ GameMaster = new Class({
 					console.log(username+" kicked off server, last seen over a minute ago.");
 			}
 		}
-		if(kicked.length > 0) FayeClient.publish('/game/userlist', {message:'Fresh userlist, users were kicked.', users: this.users, kicked: kicked });
+		if(kicked.length > 0) FayeClient.publish('/game/userlist', {message:'Users '+kicked.join(',')+' were kicked.', users: this.users, kicked: kicked });
 		return this.games;	
 	},
 

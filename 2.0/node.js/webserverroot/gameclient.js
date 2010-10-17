@@ -73,7 +73,7 @@ var GameClient = new Class({
 		if(msg) {
 			slider.slideIn();
 			status.set('html', msg);
-			slider.wait(1500).slideOut();
+			slider.wait(3500).slideOut();
 		}
 	},
 
@@ -117,7 +117,6 @@ var GameClient = new Class({
 	},
 
 	handleMockGames: function(games) {
-		if(window.console) console.debug('handling mock games!', games);
 		for (var username in games)
 		{
 			if(games[username].username && username != this.username) {
@@ -200,7 +199,6 @@ var GameClient = new Class({
 	},
 
 	publishGameState: function(state) {
-		
 		window.commServer.publish('/game/savestate/'+this.username, { username: this.username, shape: state.shape.join('|'), model: state.model.join(''), timestamp: new Date().getTime()});
 	}
 
