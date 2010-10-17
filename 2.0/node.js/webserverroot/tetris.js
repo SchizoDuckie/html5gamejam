@@ -208,10 +208,11 @@ window.Tetris = (function() {
 		},
 
 		handleKeyup: function(e) {
-
-			var command = this.options.map[e.code];
-			if(command) {
-				this.game.handleCommand(command);
+			if(e.target.tagName.toLowerCase() != 'input') {
+				var command = this.options.map[e.code];
+				if(command) {
+					this.game.handleCommand(command);
+				}
 			}
 		}
 	});
