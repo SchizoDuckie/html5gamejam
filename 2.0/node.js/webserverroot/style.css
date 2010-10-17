@@ -61,8 +61,25 @@ ul, li {
   padding:      0;
 }
 
-#online li {
+#onlineusers {
+	background-color: rgba(255,255,255,0.9);	
+}
+
+#onlineusers p, #postMessage p {
+	margin:0;
+	margin-bottom: 5px;
 	padding: 2px;
+}
+#online {
+	
+}
+#online li {
+	padding: 0px;
+	border:0;
+	list-style-type: disc;
+	margin-left: 20px;
+	background-color: transparent;
+
 }
 
 #online li b {
@@ -82,8 +99,9 @@ canvas {
 	letter-spacing:3px;
 	font-family: 'courier new';
 	color:gray;
+	background-color: #EFEFEF;
+	background-color: rgba(200,200,200,0.4);
 	text-align:center;
-	background:black;
 }
 
 .ieFails {
@@ -121,3 +139,22 @@ canvas {
 
 }
 
+
+#stream li {
+	border:0; padding: 2px;
+	border-bottom: 1px solid #2A2C14;
+}
+
+#gamestatus {
+	background-color: white;
+	color: #5C4A36;
+	text-align: center;
+	padding: 15px;
+	line-height: 15px;
+}
+
+#mocks {
+	position: absolute;
+	left: 300px;
+
+}
