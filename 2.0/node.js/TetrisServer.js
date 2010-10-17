@@ -27,51 +27,78 @@ var server = http.createServer(function(request, response) {
 });
 server.listen(Number(port))
 
-commChannel = new faye.NodeAdapter({mount: '/tetrisdemo', timeout: 20});		
+commChannel = new faye.NodeAdapter({mount: '/tetrisdemo', timeout: 500});		
 commChannel.attach(server);
 
 FayeClient = commChannel.getClient();
 
 GameMaster = new Class({
 	Extends: FayeHook,
+	startedPublishing: false,
 
 	initialize: function(channel) {
 
 		this.basechannel = channel;		
-		this.users = [];
-		this.games = [];
+		this.users = {};
+		this.games = {};
 
 		this.hookIncoming(this.handleIncoming.bind(this));
 		this.hookOutgoing(this.handleOutgoing.bind(this));
-
-
 		
 	},
 
 	handleIncoming: function(message, callback) {
+		console.log("Incoming message for channel: "+message.channel);
+
 		var channel = message.channel.split('/');
 		channel.shift();
-		console.log("Incoming message for channel: "+channel.join('\\'));
+
 		switch(channel[0]) {
 			case 'login':
 				switch(channel[1]) {
 					case 'canihazlogin':
 						console.log("User wants to login: ", JSON.encode(message));
-						if(message.data.username) 
+						if(message.data.username && !this.users[message.data.username]) 
 							{
-							//this.users[message.data.username] = message.data.browser;
-							FayeClient.publish('/login/ihazlogdin/'+encodeURIComponent(message.data.username)+'/ok', {'message': 'Welcome '+message.data.username+"! Hang on, starting the game.", users: this.users});
-							FayeClient.publish('/login/ihazlogdin/'+encodeURIComponent(message.data.username)+'/performAction', { 
-									message: 'Woeha!',
-									options: { gameChannel: 'pimpmeister' , callBack: function() {
-									
-									
-									this.startGame();
-																	
+								this.users[message.data.username] = {
+									username: message.data.username,
+									browser: message.data.browser,
+									lastSeen: new Date().getTime()
+								}
+								FayeClient.publish('/login/ihazlogdin/'+encodeURIComponent(message.data.username)+'/ok', {'message': 'Welcome '+message.data.username+"! Hang on, starting the game.", users: this.users});
+								FayeClient.publish('/login/ihazlogdin/'+encodeURIComponent(message.data.username)+'/performAction', { 
+									message: 'starting game!!', options: { gameChannel: 'pimpmeister' , callBack: function() {  // this is executed on the client :D
+										this.startGame();							
 									}.toString()   }});
+								FayeClient.publish('/game/users', this.users);
 						}
 						else {
 							FayeClient.publish('/login/ihazlogdin/'+encodeURIComponent(message.data.username)+'/nok', {'message': 'Sorry, somebody with that nickname is already online. Please pick another.'});
+						}
+					break;
+				}
+			break;
+			case 'game':
+				switch(channel[1]){ 
+					case 'getuserlist':
+						console.log("publishing users", JSON.encode(this.users));
+						FayeClient.publish('/game/userlist', {message:'Fresh userlist', users: this.users });
+					break;
+					case 'chat':
+						console.log(message);
+						message.data.message = message.data.message.replace('<', '&lt;').replace('>', '&gt;');
+						console.log("Chat message: ", message.data.message);
+					break;
+					case 'savestate':
+						message.data.username = channel[2];
+						if(message.data.model) {
+							this.setGameState(message.data);
+						}
+					break;
+					case 'states':
+
+						if(!this.startedPublishing) {
+							this.startPublishingGameStates();
 						}
 					break;
 				}
@@ -87,6 +114,42 @@ GameMaster = new Class({
 		callback(message);
 	},
 
+	startPublishingGameStates: function() {
+		this.startedPublishing = true;
+		FayeClient.publish('/game/states', this.getGameStates());
+		setTimeout(this.startPublishingGameStates.bind(this), 850);
+	},
+
+	setGameState: function(message) {
+		if(!message || !message.username) {
+			console.log("Set game state found empty empty message, cnacellig; ", JSON.encode(message));
+			return;
+		}
+		if(!this.games[message.username] || message.timestamp){
+			if(this.games[message.username] && this.games[message.username].timestamp < message.timestamp) {
+				this.games[message.username] = message;
+			} else {
+			this.games[message.username] = message;
+			}
+		}
+		if(!this.startedPublishing) { this.startPublishingGameStates(); }
+		new CliRenderer(message.shape.split('|'), message.model.split(''));
+	},
+
+	getGameStates: function() {
+		kicked = [];
+		for(username in this.games) {
+			if(this.games[username].timestamp + 60 * 1000 < new Date().getTime()) {
+					delete(this.games[username]);
+					delete(this.users[username]);
+					kicked.push(username);
+					console.log(username+" kicked off server, last seen over a minute ago.");
+			}
+		}
+		if(kicked.length > 0) FayeClient.publish('/game/userlist', {message:'Fresh userlist, users were kicked.', users: this.users, kicked: kicked });
+		return this.games;	
+	},
+
 	handleOutgoing: function(message, callback) {
 		//console.log("Outgoing: \n", JSON.encode(message));
 		
@@ -96,6 +159,44 @@ GameMaster = new Class({
 
 
 });
+
+CliRenderer = new Class({
+
+	initialize: function(shape,data) {
+		this.data = data;
+		this.chars = [' ','▓','▒','☻','#','█','☺','░'],
+		this.draw(shape,data);
+	},
+
+	draw: function(points, data) {
+
+		var insert = [];
+		var c = 11;
+		var l = points.length;
+
+		for(var p,i=0; i<l; i++) {
+			p = points[i];
+			var at = p[0] + (p[1] * c);
+			insert[at] = data;
+		}
+
+		var out = [];
+		var l = 165;
+		for(var i=0; i<l; i++) {
+			var chara = this.getChar(insert[i] || data[i] || 0);
+			out[i] = this.getChar(data[i] || 0);
+			if((i + 1) % c == 0) {
+				out[i] += "\n";
+			}
+		}
+		console.log(out.join(''));
+	},
+		
+	getChar: function(data) {
+		return this.chars[data];
+	},
+});
+
 
 new GameMaster('betatest');
 
