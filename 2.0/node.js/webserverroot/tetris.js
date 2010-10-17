@@ -38,7 +38,7 @@ window.Tetris = (function() {
 
 			this.controller = options.controller;
 			this.controller.setGame(this);
-			
+
 			this.reset();
 		},
 
@@ -91,9 +91,10 @@ window.Tetris = (function() {
 
 		stop: function() {
 			clearInterval(this.timer);
-			if(confirm('game over, reset?')) {
-				this.reset();
-			}
+			this.getContainer().adopt(new Element('button', {value: 'Game Over, Reset?'}).addEvent('click', function(e) {
+				this.reset.bind(this);
+				$(e.target).dispose();
+			}));
 		},
 
 		remove: function() {
@@ -160,6 +161,7 @@ window.Tetris = (function() {
 			if(model.fits(shape.movedBy(0,1))) {
 				shape.moveBy(0, 1);
 			} else {
+				this.fireEvent('drop', {model: model.data, shape: shape.getPoints()}); 
 				model.put(shape);
 				this.newShape();
 			}
@@ -176,8 +178,6 @@ window.Tetris = (function() {
 			while(model.fits(ghost.movedBy(0,1))) {
 				ghost.moveBy(0,1);
 			}
-			this.fireEvent('tick', model, shape, ghost); 
-			if(window.console) console.debug(model, shape,ghost);
 			this.renderer.draw(model, shape, ghost);
 		}
 	});
@@ -239,7 +239,7 @@ window.Tetris = (function() {
 		},
 
 		handleClick: function(e) {
-			console.log(e);
+			//console.log(e);
 		}
 	});
 
@@ -253,7 +253,7 @@ window.Tetris = (function() {
 		Implements: [Events, Options],
 
 		initialize: function(options) {
-			this.setOption(options);
+			this.setOptions(options);
 		},
 
 		setGame: function(game) {
@@ -265,7 +265,7 @@ window.Tetris = (function() {
 		},
 
 		handleEvent: function(e) {
-			console.log(e)
+			//console.log(e)
 		}
 	});
 
@@ -279,15 +279,20 @@ window.Tetris = (function() {
 		Implements: [Events, Options],
 
 		initialize: function(options) {
-			this.setOption(options);
+			this.setOptions(options);
 		},
 
 		setGame: function(game) {
 			this.game = game;
-			
-			// game.getModel()
-			// game.setModel()
-			// comet / socket / etc
+			game.stop();
+			game.heartbeat = function() {};
+			this.game.addEvent('newData', this.drawRemote.bind(this));
+		},
+		
+		drawRemote: function(data) {
+			this.game.shape.points = data.shape;
+			this.game.model.data = data.model;
+			this.game.renderer.draw(this.game.model, this.game.shape, this.game.shape);
 		}
 	});
 
@@ -415,6 +420,7 @@ window.Tetris = (function() {
 			this.height = h;
 			this.total = w * h;
 			this.data.length = this.total;
+			for(i=0; i<this.total;i++) { this.data[i] = 0; }
 		},
 
 		put: function(shape) {
@@ -636,21 +642,20 @@ window.Tetris = (function() {
 
 		chars: [
 			'-',
-			'<span class="a">A</span>',
-			'<span class="b">B</span>',
-			'<span class="c">C</span>',
-			'<span class="d">D</span>',
-			'<span class="e">E</span>',
-			'<span class="f">F</span>',
-			'<span class="g">G</span>',
-		],
+			'<span class="a">▓</span>',
+			'<span class="b">▒</span>',
+			'<span class="c">☻</span>',
+			'<span class="d">█</span>',
+			'<span class="e">☺</span>',
+			'<span class="f">#</span>',
+			'<span class="g">░</span>',
+		],				
 
 		initialize: function(options) {
 			this.setOptions(options);
 			this.node = document.createElement('pre'); 
 			this.node.className = 'textRenderer';
 			options.target.appendChild(this.node);
-			new Element('p').addClass('ieFails').set('html', 'You have an inferior browser. Now bow to our ASCII Renderer!').injectInside(document.body);
 			this.resizeTo(options.width, options.height);
 		},
 
@@ -668,7 +673,7 @@ window.Tetris = (function() {
 			var insert = [];
 			
 			var c = model.width;
-			
+				
 			var l = points.length;
 			for(var p,i=0; i<l; i++) {
 				p = points[i];
@@ -691,7 +696,8 @@ window.Tetris = (function() {
 		resizeTo:function(w, h) {
 			var css = this.node.style;
 			css.width = w + 'px';
-			css.height = h + 'px';
+			/*css.height = h + 'px';*/
+			css.fontSize = '9px';
 		}
 	});
 
