@@ -70,7 +70,7 @@ GameMaster = new Class({
 									message: 'starting game!!', options: { gameChannel: 'pimpmeister' , callBack: function() {  // this is executed on the client :D
 										this.startGame();							
 									}.toString()   }});
-								FayeClient.publish('/game/users', this.users);
+								FayeClient.publish('/game/userlist', {message: this.getOnlineCount()+' users online. Enjoy!', users: this.users });
 						}
 						else {
 							FayeClient.publish('/login/ihazlogdin/'+encodeURIComponent(message.data.username)+'/nok', {'message': 'Sorry, somebody with that nickname is already online. Please pick another.'});
@@ -83,7 +83,7 @@ GameMaster = new Class({
 					case 'getuserlist':
 						console.log("publishing users. "+this.getOnlineCount()+' online.');
 
-						FayeClient.publish('/game/userlist', {message: this.getOnlineCount()+' users online. Enjoy!', users: this.users });
+						this.publishUserList({message: this.getOnlineCount()+' users online. Enjoy!'});
 					break;
 					case 'chat':
 						message.data.message = message.data.message.replace('<', '&lt;').replace('>', '&gt;');
@@ -139,40 +139,47 @@ GameMaster = new Class({
 
 	setGameState: function(message) {
 		if(!message || !message.username) {
-			console.log("Set game state found empty empty message, cnacellig; ", JSON.encode(message));
+			console.log("Set game state found empty empty message, cancellng; ", JSON.encode(message));
 			return;
 		}
 		if(!this.games[message.username] || message.timestamp){
-			if(this.games[message.username] && this.games[message.username].timestamp < message.timestamp) {
+			if(this.games[message.username]) {
+				this.users[message.username].lastSeen= new Date().getTime();
 				this.games[message.username] = message;
+			}
+			else {
+				this.games[message.username] = message;
+
 				if(!this.users[message.username]) {
 					this.users[message.username] = this.users[message.username] = {
 									username: message.username,
 									browser: ['uknown',0],
 									lastSeen: new Date().getTime()
 								};
+					this.publishUserList('New found: ', message.username);
 				}
-			}
-			else {
-				this.games[message.username] = message;
 			}
 		}
 		if(!this.startedPublishing) { this.startPublishingGameStates(); }
 		console.log("Logged game state for "+message.username);
-		new CliRenderer(message.shape.split('|'), message.model.split(''));
+		new CliRenderer(message.shapePoints, Rle.decode(message.model));
+	},
+
+	publishUserList: function(message, data) {
+		FayeClient.publish('/game/userlist', Object.merge({message: message, users: this.users}, data));
 	},
 
 	getGameStates: function() {
 		kicked = [];
 		for(username in this.games) {
-			if(this.games[username].timestamp + 60 * 1000 < new Date().getTime()) {
+			if(this.users[username].lastSeen + 60 * 1000 < new Date().getTime()) {
 					delete(this.games[username]);
 					delete(this.users[username]);
 					kicked.push(username);
 					console.log(username+" kicked off server, last seen over a minute ago.");
 			}
 		}
-		if(kicked.length > 0) FayeClient.publish('/game/userlist', {message:'Users '+kicked.join(',')+' were kicked.', users: this.users, kicked: kicked });
+		if(kicked.length > 0) this.publishUserList((kicked.length >1? 'Users '+kicked.join(',')+' were ' : 'User '+kicked[0]+' was ') + 'kicked due to inactivity', { kicked: kicked });
 		return this.games;	
 	},
 
@@ -187,9 +194,11 @@ GameMaster = new Class({
 });
 
 CliRenderer = new Class({
-
+	
 	initialize: function(shape,data) {
+
 		this.data = data;
+//		console.log(this.data);
 		this.chars = [' ','▓','▒','☻','#','█','☺','░'],
 		this.draw(shape,data);
 	},
@@ -222,6 +231,32 @@ CliRenderer = new Class({
 		return this.chars[data];
 	},
 });
+
+/* custom rle encoder that maps our digits to aplphanum chars to make RLE encoding possible. */
+var RLE = new Class({
+	charMappings: {A:0,B:1,C:2,D:3,E:4,F:5,G:6,H:7,I:8,J:9,K:10,L:11,M:12,N:13,O:14,P:15,Q:16,R:17,S:18,T:19,U:20,V:21,W:22,X:23,Y:24,Z:25},
+	numberMappings: ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'],
+
+	encode:function(input) {
+		var encoding = "";
+
+		Hash.each(input.match(/(.)\1*/g), function(substr){ encoding  += substr.length + "" +this.numberMappings[parseInt(substr[0])] }, this );
+		this.decode(encoding);
+		return encoding;
+	},
+
+	decode: function(encoded) {
+		console.log(encoded);
+		var output = "";
+		Object.each(encoded.match(/([0-9]{1,})(\w)/g), function(a){
+			var l = a.split(/([0-9]{1,})/g); 
+			output += new Array(1 + parseInt(l[1])).join(this.charMappings[l[2]]);
+		}, this );
+		return output;
+	}
+});
+
+Rle = new RLE();
 
 
 new GameMaster('betatest');

@@ -9,6 +9,7 @@ var GameClient = new Class({
 		$('onlinewrap').get('slide').hide();
 		$('gamestatus').get('slide').hide();
 		$('username').focus();
+		$('loginbutton').removeProperty('disabled');
 		$(this.options.loginform).addEvent('submit', this.login.bind(this));
 		$('postMessage').addEvent('submit', this.postToChat.bind(this));
 		oldUnload = window.onbeforeunload;
@@ -36,6 +37,7 @@ var GameClient = new Class({
 	login: function(e) {
 		e.stop();
 		this.username =  $('username').get('value');
+		$('loginbutton').set('disabled', 'disabled');
 		try
 		{	
 			var subChannel = '/login/ihazlogdin/'+encodeURIComponent(this.username)+'/*';
@@ -49,6 +51,7 @@ var GameClient = new Class({
 				} else {
 					this.showMessage("Please choose a username without any funky characters or spaces. Allowed: A-Za-z0-9-_.");
 				}
+				$('loginbutton').removeProperty('disabled');
 			} else {
 				alert(E);
 			}
@@ -72,14 +75,15 @@ var GameClient = new Class({
 		}
 		if(msg) {
 			slider.slideIn();
-			status.set('html', msg);
+			status.set('html', msg.message || msg);
 			slider.wait(3500).slideOut();
 		}
 	},
 
 	handleAuthAction: function(message) {
-
 		if(message.message) this.showMessage(message.message);
+		$('loginbutton').removeProperty('disabled');
+
 		if(message.options && message.options.callBack) {
 		
 			eval("cbFunc = "+message.options.callBack+";");
@@ -109,36 +113,54 @@ var GameClient = new Class({
 
 		if(message.kicked) {
 			Hash.each(message.kicked, function(user) {
-				if($(user)) { 
-					$(user).get('slide').slideIn();
-				}				
-			});
+				$(this.mockGames[user].renderer.getContainer()).getParent().destroy();
+				this.mockGames[user] = null;
+				delete this.mockGames[user];
+			}, this);
 		}
 	},
 
 	handleMockGames: function(games) {
-		for (var username in games)
-		{
-			if(games[username].username && username != this.username) {
-				if(!this.mockGames[username]) {
-					var newContainer = new Element('DIV', {id: username}).injectInside($("mocks"));
-					newContainer.set('html', '<strong>'+username+'</strong>');
-					var remote = new Tetris.Remote();
+		Hash.each(games, function(game, username) {
+			var user = username;
+			if(games[username].username && user != this.username) {
+				if(!this.mockGames[user]) {
+					try
+					{
+						var el;
+						var remote = new Tetris.Remote();
+						$("mocks").adopt(el = new Element('div', { html: '<strong>'+user+'</strong>' }));
+						this.mockGames[user] = new Tetris({
+							target: el,
+							renderer:	Tetris.CanvasRenderer,
+							controller: remote,
+							cols: 11,
+							rows: 15,
+							width: 110,
+							height: 150
+						});
 
-					this.mockGames[username] = new Tetris({
-						target: newContainer,
-						renderer:	Tetris.CanvasRenderer,
-						controller: remote,
-						cols: 11,
-						rows: 15,
-						width: 110,
-						height: 150
-					});
+					}
+					catch (E)
+					{
+						debugger;
+					}
+				} else {
+
+					try
+					{
+					// pass the new data to the game. It registered the newData event.
+						this.mockGames[user].fireEvent('newData', game);						
+					}
+					catch (E)
+					{
+						if(window.console) console.debug(E);
+					}
+
 				}
-				// pass the new data to the game. It registered the newData event.
-				this.mockGames[username].fireEvent('newData', games[username]);
+
 			}
-		}
+		}, this);
 	},
 	
 
@@ -199,8 +221,44 @@ var GameClient = new Class({
 	},
 
 	publishGameState: function(state) {
-		window.commServer.publish('/game/savestate/'+this.username, { username: this.username, shape: state.shape.join('|'), model: state.model.join(''), timestamp: new Date().getTime()});
+		window.commServer.publish('/game/savestate/'+this.username, { 
+				username: this.username, 
+				shapeData: state.shapeData, 
+				shapePoints:state.shapePoints, 
+				model: RLE.encode(state.model.join('')), 
+				timestamp: new Date().getTime()
+		});
 	}
 
 
+
+
 });
+
+
+/* custom rle encoder that maps our digits to aplphanum chars to make RLE encoding possible. */
+var RLE = new Class({
+	numberMappings: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+	
+	encode:function(input) {
+		var encoding = "", 
+			enc = /(.)\1*/g, 
+			m= input.match(enc);
+
+		for(i=0;i<m.length;i++) {
+			encoding += m[i].length + this.numberMappings[m[i][0]];
+		}
+		return encoding;
+	},
+
+	decode: function(encoded) {
+		var output = "";
+		var s = encoded.split(/([A-Z])/);
+		for(i=0; i<s.length -1; i+=2) {
+			output += new Array(1 + parseInt(s[i])).join(this.numberMappings.indexOf(s[i+1]));
+		} 
+		return output;
+	}
+});
+
+window.RLE = new RLE();

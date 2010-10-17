@@ -17,7 +17,6 @@ h1, form, ul li {
   padding:      10px;
   border:       1px solid #2A2C14;
 
-  b
 }
 
 h1 {
@@ -157,4 +156,9 @@ canvas {
 	position: absolute;
 	left: 300px;
 
+}
+
+#mocks div {
+	float: left;
+	margin-left: 5px;
 }

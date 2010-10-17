@@ -44,8 +44,10 @@ window.Tetris = (function() {
 
 
 		kicks: {
-			left: [[-1, 0],[-1, 1],[0,-2],[-1,-2]],
-			right: [[1, 0],[1, 1],[0,-2],[1,-2]]
+			left: [[0, -1],[1, -1],[-2,0],[-2,-1]],
+			right: [[0, 1],[1, 1],[-2,0],[-2,1]]
+			//left: [[-1, 0],[-1, 1],[0,-2],[-1,-2]],
+			//right: [[1, 0],[1, 1],[0,-2],[1,-2]]
 		},
 
 		getContainer: function() {
@@ -158,9 +160,9 @@ window.Tetris = (function() {
 			if(model.fits(shape.movedBy(0,1))) {
 				shape.moveBy(0, 1);
 			} else {
-				this.fireEvent('drop', {model: model.data, shape: shape.getPoints()}); 
 				model.put(shape);
 				this.newShape();
+				this.fireEvent('drop', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData()}); 
 			}
 
 			this.update();
@@ -212,6 +214,7 @@ window.Tetris = (function() {
 				var command = this.options.map[e.code];
 				if(command) {
 					this.game.handleCommand(command);
+					e.stop();
 				}
 			}
 		}
@@ -285,15 +288,47 @@ window.Tetris = (function() {
 			this.game.stop = function() {
 				
 			}	
+			this.game.renderer.drawShape = this.drawShape.bind(game.renderer);
+			this.game.renderer.draw = this.draw.bind(game.renderer);
 			game.stop();
 			game.heartbeat = function() {};
 			this.game.addEvent('newData', this.drawRemote.bind(this));
 		},
 		
 		drawRemote: function(data) {
-			this.game.shape.points = data.shape;
-			this.game.model.data = data.model;
+			this.game.shape.points = data.shapePoints;
+			this.game.shape.data = data.shapeData;
+			this.game.model.data = RLE.decode(data.model);
 			this.game.renderer.draw(this.game.model, this.game.shape, this.game.shape);
+
+		},
+		
+		draw: function(model, shape) {
+			this.model = model;
+			this.spriteWidth = this.canvas.width / model.width;
+			this.spriteHeight = this.canvas.height / model.height;
+			this.drawModel(model);
+		},
+
+
+		
+		drawShape: function(shape) {
+			var sw = this.spriteWidth;
+			var sh = this.spriteHeight;
+			var c = this.model.width;
+			var ctx = this.context;
+
+			var points = shape.getPoints();
+			var data = shape.getData();
+			var sprite = this.getSprite(data);
+			
+			var l = points.length;
+			for(var p,i=0; i<l; i++) {
+				p = points[i];				
+				x = (p[0] % c) * sw || Math.floor(c /2) * sw;
+				y = p[1] * sh || sh ;
+				ctx.drawImage(sprite, x, y, sw, sh);					
+			}
 		}
 	});
 
@@ -613,7 +648,15 @@ window.Tetris = (function() {
 				p = points[i];				
 				x = (p[0] % c) * sw;
 				y = p[1] * sh;
-				ctx.drawImage(sprite, x, y, sw, sh);
+				try
+				{
+				ctx.drawImage(sprite, x, y, sw, sh);					
+				}
+				catch (E)
+				{
+					if(window.console) console.log('Couldnt drawShape on CTx:',sprite,x,y,sw,sh);
+				}
+
 			}
 		},
 
