@@ -48,7 +48,7 @@ GameMaster = new Class({
 	},
 
 	handleIncoming: function(message, callback) {
-		//console.log("Incoming message for channel: "+message.channel);
+		//cli.move(0,4).clearLine().write("Incoming message for channel: "+message.channel);
 
 		var channel = message.channel.split('/');
 		channel.shift();
@@ -57,7 +57,7 @@ GameMaster = new Class({
 			case 'login':
 				switch(channel[1]) {
 					case 'canihazlogin':
-						console.log("User wants to login: "+message.data.username);
+						cli.move(3,4).clearLine().write("User wants to login: "+message.data.username);
 						if(message.data.username && !this.users[message.data.username]) 
 							{
 								this.users[message.data.username] = {
@@ -65,6 +65,7 @@ GameMaster = new Class({
 									browser: message.data.browser,
 									lastSeen: new Date().getTime()
 								}
+								this.users[message.data.username].index = this.getOnlineCount();
 								FayeClient.publish('/login/ihazlogdin/'+encodeURIComponent(message.data.username)+'/ok', {'message': 'Welcome '+message.data.username+"! Hang on, starting the game.", users: this.users});
 								FayeClient.publish('/login/ihazlogdin/'+encodeURIComponent(message.data.username)+'/performAction', { 
 									message: 'starting game!!', options: { gameChannel: 'pimpmeister' , callBack: function() {  // this is executed on the client :D
@@ -81,13 +82,13 @@ GameMaster = new Class({
 			case 'game':
 				switch(channel[1]){ 
 					case 'getuserlist':
-						console.log("publishing users. "+this.getOnlineCount()+' online.');
+						cli.move(5,4).clearLine().write("publishing users. "+this.getOnlineCount()+' online.');
 
 						this.publishUserList({message: this.getOnlineCount()+' users online. Enjoy!'});
 					break;
 					case 'chat':
 						message.data.message = message.data.message.replace('<', '&lt;').replace('>', '&gt;');
-						console.log("[CHAT]: "+message.data.username,':', message.data.message);
+						cli.move(7,4).clearLine().write("[CHAT]: "+message.data.username+':'+ message.data.message);
 					break;
 					case 'savestate':
 						message.data.username = channel[2];
@@ -104,10 +105,10 @@ GameMaster = new Class({
 				}
 			break;
 			case 'kthxbye':
-				console.log("User want to logout: "+message.data.username);
+				cli.move(3,4).clearLine().write("User want to logout: "+message.data.username);
 			break;
 			default: 
-				console.log('Message received on unknown channel!', JSON.encode(channel), JSON.encode(message));
+				cli.move(3,4).clearLine().write('Message received on unknown channel!', JSON.encode(channel), JSON.encode(message));
 			return;
 
 		}
@@ -139,7 +140,7 @@ GameMaster = new Class({
 
 	setGameState: function(message) {
 		if(!message || !message.username) {
-			console.log("Set game state found empty empty message, cancellng; ", JSON.encode(message));
+			cli.move(5,5).clearLine().write("Set game state found empty empty message, cancellng; ", JSON.encode(message));
 			return;
 		}
 		if(!this.games[message.username] || message.timestamp){
@@ -153,16 +154,17 @@ GameMaster = new Class({
 				if(!this.users[message.username]) {
 					this.users[message.username] = this.users[message.username] = {
 									username: message.username,
-									browser: ['uknown',0],
+									browser: ['unknown',0],
 									lastSeen: new Date().getTime()
 								};
+					this.users[message.username].index = this.getOnlineCount();
 					this.publishUserList('New found: ', message.username);
 				}
 			}
 		}
 		if(!this.startedPublishing) { this.startPublishingGameStates(); }
-		console.log("Logged game state for "+message.username);
-		new CliRenderer(message.shapePoints, Rle.decode(message.model));
+		cli.move(3,4).clearLine().write("Game state for "+message.username+':');
+		new CliRenderer(message.shapePoints, Rle.decode(message.model), this.users[message.username].index);
 	},
 
 	publishUserList: function(message, data) {
@@ -176,7 +178,7 @@ GameMaster = new Class({
 					delete(this.games[username]);
 					delete(this.users[username]);
 					kicked.push(username);
-					console.log(username+" kicked off server, last seen over a minute ago.");
+					cli.move(4,4).clearLine().write(username+" kicked off server, last seen over a minute ago.");
 			}
 		}
 		if(kicked.length > 0) this.publishUserList((kicked.length >1? 'Users '+kicked.join(',')+' were ' : 'User '+kicked[0]+' was ') + 'kicked due to inactivity', { kicked: kicked });
@@ -184,7 +186,7 @@ GameMaster = new Class({
 	},
 
 	handleOutgoing: function(message, callback) {
-		//console.log("Outgoing: \n", JSON.encode(message));
+		//cli.move(0,4).clearLine().write("Outgoing: \n", JSON.encode(message));
 		
 		callback(message);
 	},
@@ -195,10 +197,11 @@ GameMaster = new Class({
 
 CliRenderer = new Class({
 	
-	initialize: function(shape,data) {
-
+	initialize: function(shape,data, position) {
+		this.position = position || 0;
+		cli.move(50,50).write('pos:' +this.position);
 		this.data = data;
-//		console.log(this.data);
+//		cli.move(0,4).clearLine().write(this.data);
 		this.chars = [' ','▓','▒','☻','#','█','☺','░'],
 		this.draw(shape,data);
 	},
@@ -221,10 +224,11 @@ CliRenderer = new Class({
 			var chara = this.getChar(insert[i] || data[i] || 0);
 			out[i] = this.getChar(data[i] || 0);
 			if((i + 1) % c == 0) {
-				out[i] += "\n";
+				// back c, down 1
+				out[i] += '\033['+c+'D\033[1B';
 			}
 		}
-		console.log(out.join(''));
+		cli.move(15, (this.position +1)  * 15).write(out.join(''));
 	},
 		
 	getChar: function(data) {
@@ -246,7 +250,7 @@ var RLE = new Class({
 	},
 
 	decode: function(encoded) {
-		console.log(encoded);
+		cli.move(35,4).clearLine().write(encoded);
 		var output = "";
 		Object.each(encoded.match(/([0-9]{1,})(\w)/g), function(a){
 			var l = a.split(/([0-9]{1,})/g); 
@@ -258,8 +262,72 @@ var RLE = new Class({
 
 Rle = new RLE();
 
+MooCli = new Class({
+
+	colours : {
+	  grey:    30,
+	  red:     31,
+	  green:   32,
+	  yellow:  33,
+	  blue:    34,
+	  magenta: 35,
+	  cyan:    36,
+	  white:   37
+	},
+
+	color: function(color, bold) {
+		sys.print('\x1B['+(bold ? 1 : 0)+';'+this.colors[color]+'m');
+		return(this);
+	},
+
+	resetColor: function() {
+		sys.print('\x1B[0m');
+		return(this);
+	},
+
+	write: function(string) {
+		sys.print(string);
+		return(this);
+	},
+	// Position the Cursor:  \033[<L>;<C>H   Or  \033[<L>;<C>f
+	move: function(x,y) {
+		sys.print('\033['+x+';'+y+'H');
+		return this;
+	},
+	up: function(num) {
+		sys.print('\033['+num+'A');
+		return this;
+	},
+	down: function(num) {
+		sys.print('\033['+num+'B');
+		return this;
+	},
+	fwd: function(num) {
+		sys.print('\033['+num+'C');
+		return this;
+	},
+	back: function(num) {
+		sys.print('\033['+num+'D');
+		return this;
+	},
+	clear: function(num) {
+		sys.print('\033[2J');
+		return this;
+	},
+	clearLine: function(num) {
+		sys.print('\033[K');
+		return this;
+	}
+	
+
+
+});
+
+var cli = new MooCli();
+
 
 new GameMaster('betatest');
 
 
-sys.puts('Listening on ' + port);
+
+cli.clear().move(38, 5).write('Node.js Tetris Server Listening on port:' + port);
