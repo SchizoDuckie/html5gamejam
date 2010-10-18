@@ -70,10 +70,16 @@ var Tetris = (function() {
 			this.reset();
 		},
 
-
+		// separate SRS kicks from state a to b as int. 0 is spawnstate, 1 right, 2 upside down, 3 left.
 		kicks: {
-			left: [[-1, 0],[-1, 1],[0,-2],[-1,-2]],
-			right: [[1, 0],[1, 1],[0,-2],[1,-2]]
+			'0-1' : [[-1, 0], [-1,-1], [ 0, 2], [-1, 2]],
+			'2-1' : [[-1, 0], [-1,-1], [ 0, 2], [-1, 2]],
+			'1-0' : [[ 1, 0], [ 1, 1], [ 0,-2], [ 1,-2]],
+			'1-2' : [[ 1, 0], [ 1, 1], [ 0,-2], [ 1,-2]],
+			'2-3' : [[ 1, 0], [ 1,-1], [ 0, 2], [ 1, 2]],
+			'0-3' : [[ 1, 0], [ 1,-1], [ 0, 2], [ 1, 2]],
+			'3-2' : [[-1, 0], [-1, 1], [ 0,-2], [-1,-2]],
+			'3-0' : [[-1, 0], [-1, 1], [ 0,-2], [-1,-2]]
 		},
 
 		getContainer: function() {
@@ -152,13 +158,14 @@ var Tetris = (function() {
 			var shape = this.shape;
 			var rotated = shape.rotatedBy(dir);
 
+
 			if(model.fits(rotated)) {
 				shape.rotateBy(dir);
 			} else {
-				var type = (dir > 0)? 'right' : 'left';
+				var type = shape.state + '-' + rotated.state;
 				var kicks = this.kicks[type];
-				
-				var l = kicks.length;
+
+				var l = kicks? kicks.length : 0;
 				for(var kicked,k,x,y,i=0; i<l; i++) {
 					k = kicks[i];
 					x = k[0];
@@ -166,7 +173,7 @@ var Tetris = (function() {
 
 					kicked = rotated.movedBy(x, y);
 					if(model.fits(kicked)) {
-						shape.rotateBy(1);
+						shape.rotateBy(dir);
 						shape.moveBy(x, y);
 						break;
 					}
@@ -326,22 +333,22 @@ var Tetris = (function() {
 		Implements: [Events, Options],
 
 		shapes: [
-			[[-2,0], [-1,0],[0,0], [1,0]],
-			[[-1,-1],[-1,0],[0,0], [1,0]],
-			[[-1,0], [0,0], [1,0], [1,-1]],
-			[[-1,-1],[-1,0],[0,-1],[0,0]],
-			[[-1,0], [0,0], [0,-1],[1,-1]],
-			[[-1,0], [0,-1],[0,0], [1,0]],
-			[[-1,-1],[0,-1],[0,0], [1,0]]
+			[[-2,0], [-1,0],[0,0], [1,0]],	// I
+			[[-1,-1],[-1,0],[0,0], [1,0]],	// J
+			[[-1,0], [0,0], [1,0], [1,-1]],	// L
+			[[-1,-1],[-1,0],[0,-1],[0,0]],	// O
+			[[-1,0], [0,0], [0,-1],[1,-1]],	// S
+			[[-1,0], [0,-1],[0,0], [1,0]],	// T
+			[[-1,-1],[0,-1],[0,0], [1,0]]	// Z
 		],
 			
 		initialize: function(options) {
 			this.setOptions(options);
 		},
 
-		getShape: function() {
+		getShape: function(n) {
 			var l = this.shapes.length;
-			var r = _floor(_random() * l);
+			var r = n || _floor(_random() * l);
 			return new Tetris.Shape(this.shapes[r], r + 1);
 		}
 	});
@@ -355,9 +362,10 @@ var Tetris = (function() {
 	Tetris.Shape = new Class({
 		Implements: [Events],
 
-		initialize: function(points, data, position) {
+		initialize: function(points, data, position, state) {
 			this.points = points;
 			this.rotation = new Matrix();
+			this.state = state || 0;
 			this.position = position || new Matrix();
 			this.data = data;
 			this.angle = PI / -2;
@@ -375,6 +383,7 @@ var Tetris = (function() {
 		},
 
 		rotateBy: function(dir) {
+			this.state = (4 + this.state + dir) % 4;
 			var rotation = this.rotation.rotate(this.angle * dir);
 			this.points = this.transform(rotation);
 			return this;
@@ -397,7 +406,7 @@ var Tetris = (function() {
 		},
 
 		clone: function() {
-			return new Tetris.Shape(this.points, this.data, this.position);
+			return new Tetris.Shape(this.points, this.data, this.position, this.state);
 		},
 
 		transform: function(matrix) {
@@ -573,7 +582,7 @@ var Tetris = (function() {
 					ctx.lineTo(sw, sh);
 					ctx.lineTo(0, sh);
 					ctx.stroke();
-					
+
 					this.sprites[i] = canvas;
 				}
 			}
