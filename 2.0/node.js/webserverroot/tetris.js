@@ -42,12 +42,16 @@ window.Tetris = (function() {
 			this.reset();
 		},
 
-
+		// separate SRS kicks from state a to b as int. 0 is spawnstate, 1 right, 2 upside down, 3 left.
 		kicks: {
-			left: [[0, -1],[1, -1],[-2,0],[-2,-1]],
-			right: [[0, 1],[1, 1],[-2,0],[-2,1]]
-			//left: [[-1, 0],[-1, 1],[0,-2],[-1,-2]],
-			//right: [[1, 0],[1, 1],[0,-2],[1,-2]]
+			'0-1' : [[-1, 0], [-1,-1], [ 0, 2], [-1, 2]],
+			'2-1' : [[-1, 0], [-1,-1], [ 0, 2], [-1, 2]],
+			'1-0' : [[ 1, 0], [ 1, 1], [ 0,-2], [ 1,-2]],
+			'1-2' : [[ 1, 0], [ 1, 1], [ 0,-2], [ 1,-2]],
+			'2-3' : [[ 1, 0], [ 1,-1], [ 0, 2], [ 1, 2]],
+			'0-3' : [[ 1, 0], [ 1,-1], [ 0, 2], [ 1, 2]],
+			'3-2' : [[-1, 0], [-1, 1], [ 0,-2], [-1,-2]],
+			'3-0' : [[-1, 0], [-1, 1], [ 0,-2], [-1,-2]]
 		},
 
 		getContainer: function() {
@@ -127,10 +131,10 @@ window.Tetris = (function() {
 			if(model.fits(rotated)) {
 				shape.rotateBy(dir);
 			} else {
-				var type = (dir > 0)? 'right' : 'left';
+				var type = shape.state + '-' + rotated.state;
 				var kicks = this.kicks[type];
-				
-				var l = kicks.length;
+
+				var l = kicks? kicks.length : 0;
 				for(var kicked,k,x,y,i=0; i<l; i++) {
 					k = kicks[i];
 					x = k[0];
@@ -138,7 +142,7 @@ window.Tetris = (function() {
 
 					kicked = rotated.movedBy(x, y);
 					if(model.fits(kicked)) {
-						shape.rotateBy(1);
+						shape.rotateBy(dir);
 						shape.moveBy(x, y);
 						break;
 					}
@@ -204,8 +208,8 @@ window.Tetris = (function() {
 
 		setGame: function(game) {
 			this.game = game;
-			// let's try to keep this at least cross-browser :P
-			$(window).addEvent('keydown',  this.handleKeyup.bind(this));
+			
+			$(document).addEvent('keydown',  this.handleKeyup.bind(this));
 		},
 
 		handleKeyup: function(e) {
@@ -289,6 +293,9 @@ window.Tetris = (function() {
 			}	
 			this.game.renderer.drawShape = this.drawShape.bind(game.renderer);
 			this.game.renderer.draw = this.draw.bind(game.renderer);
+			this.game.factory.showPreview = function() {};
+			$(this.game.factory.queueDiv).dispose();
+
 			game.stop();
 			game.heartbeat = function() {};
 			this.game.addEvent('newData', this.drawRemote.bind(this));
@@ -341,23 +348,61 @@ window.Tetris = (function() {
 		Implements: [Events, Options],
 
 		shapes: [
-			[[-2,0], [-1,0],[0,0], [1,0]],
-			[[-1,-1],[-1,0],[0,0], [1,0]],
-			[[-1,0], [0,0], [1,0], [1,-1]],
-			[[-1,-1],[-1,0],[0,-1],[0,0]],
-			[[-1,0], [0,0], [0,-1],[1,-1]],
-			[[-1,0], [0,-1],[0,0], [1,0]],
-			[[-1,-1],[0,-1],[0,0], [1,0]]
+			[[-2,0], [-1,0],[0,0], [1,0]],	// I
+			[[-1,-1],[-1,0],[0,0], [1,0]],	// J
+			[[-1,0], [0,0], [1,0], [1,-1]],	// L
+			[[-1,-1],[-1,0],[0,-1],[0,0]],	// O
+			[[-1,0], [0,0], [0,-1],[1,-1]],	// S
+			[[-1,0], [0,-1],[0,0], [1,0]],	// T
+			[[-1,-1],[0,-1],[0,0], [1,0]]	// Z
 		],
+			
+		queue: [],
+		renderers: [],
 			
 		initialize: function(options) {
 			this.setOptions(options);
+			this.getShapes(5);
+			
+			this.queueDiv= options.target.appendChild(
+				document.createElement('div')
+			);
+			this.queueDiv.innerHTML ='<h2>Queue:</h2>';
+			this.queueDiv.className = 'shapequeue';
+
+			this.model = new Tetris.Model({cols: 4, rows: 3});
+			this.renderers = [
+				new Tetris.CanvasRenderer({ target:this.queueDiv, width: 50, height:40, cols: 4, rows: 3 }),
+				new Tetris.CanvasRenderer({ target:this.queueDiv, width: 50, height:40, cols: 4, rows: 3 }),
+				new Tetris.CanvasRenderer({ target:this.queueDiv, width: 50, height:40, cols: 4, rows: 3 })
+					];
 		},
 
-		getShape: function() {
+		getShapes: function(n) {
+			for(i=0;i<n;i++) {
+				this.queue.push(this.newShape());
+			}
+		},
+
+		newShape: function(n) {
 			var l = this.shapes.length;
-			var r = _floor(_random() * l);
+			var r = n || _floor(_random() * l);
 			return new Tetris.Shape(this.shapes[r], r + 1);
+		},
+
+		showPreview: function() {
+			for(i=0;i<this.renderers.length; i++) {
+				this.renderers[i].draw(this.model, this.queue[1+i].moveTo(2,2));
+			}
+			return(this.queue[1]);
+		},
+
+
+		getShape: function(n) {
+			this.getShapes(1);
+			this.showPreview();
+			return this.queue.shift();
+
 		}
 	});
 
@@ -370,9 +415,10 @@ window.Tetris = (function() {
 	Tetris.Shape = new Class({
 		Implements: [Events],
 
-		initialize: function(points, data, position) {
+		initialize: function(points, data, position, state) {
 			this.points = points;
 			this.rotation = new Matrix();
+			this.state = state || 0;
 			this.position = position || new Matrix();
 			this.data = data;
 			this.angle = PI / -2;
@@ -390,6 +436,7 @@ window.Tetris = (function() {
 		},
 
 		rotateBy: function(dir) {
+			this.state = (4 + this.state + dir) % 4;
 			var rotation = this.rotation.rotate(this.angle * dir);
 			this.points = this.transform(rotation);
 			return this;
@@ -610,7 +657,7 @@ window.Tetris = (function() {
 			this.spriteHeight = this.canvas.height / model.height;
 
 			this.drawModel(model);
-			this.drawGhost(ghost);
+			if(ghost)this.drawGhost(ghost);
 			this.drawShape(shape);
 		},
 
@@ -652,14 +699,8 @@ window.Tetris = (function() {
 				p = points[i];				
 				x = (p[0] % c) * sw;
 				y = p[1] * sh;
-				try
-				{
-				ctx.drawImage(sprite, x, y, sw, sh);					
-				}
-				catch (E)
-				{
-					if(window.console) console.log('Couldnt drawShape on CTx:',sprite,x,y,sw,sh);
-				}
+				ctx.drawImage(sprite, x, y, sw, sh);
+				
 
 			}
 		},
@@ -679,6 +720,88 @@ window.Tetris = (function() {
 			this.context = canvas.getContext('2d');
 		}
 	});
+
+
+	/**
+	 * DivRenderer
+	 * 
+	 */
+
+	Tetris.DivRenderer = new Class({
+		Implements: [Events, Options],
+
+		chars: [
+			'trans',
+			'a',
+			'b',
+			'c',
+			'd',
+			'e',
+			'f',
+			'g',
+		],
+
+		grid:[],
+
+		initialize: function(options) {
+			this.setOptions(options);
+			this.node = new Element('div').addClass('divRenderer').inject(options.target);
+			options.target.appendChild(this.node);
+			this.resizeTo(options.width, options.height);
+		},
+
+		getContainer: function() {
+			return this.node;
+		},
+
+		getChar: function(data) {
+			return this.chars[data];
+		},
+
+		drawGrid: function(length, width) {
+			this.grid = new Array(length);
+			for(var i=0; i<length; i++) {
+				this.grid[i] = new Element('div').addClass('trans').inject(this.node);
+				if((i + 1) % width == 0) {
+					new Element('div').addClass("lineclear").inject(this.node)
+				}
+			}
+
+		},
+
+		draw: function(model, shape, ghost) {		
+			if(this.grid.length != model.total) this.drawGrid(model.total, model.width);
+				
+			var shape = this.drawShape(shape,model);
+			var ghost = this.drawShape(ghost,model);
+		
+			for(var i=0; i< model.total; i++) {
+				this.grid[i].set('class', (ghost[i] && !shape[i] ? 'ghost ' : '') + this.getChar(shape[i] || ghost[i] || model.data[i] || 0));
+				//if(ghost[i]) this.grid[i].addClass('ghost');
+				
+			}
+		},
+
+		drawShape: function(shape, model) {
+			var insert = [];
+			var c = model.width;
+			var points = shape.getPoints();
+			var data = shape.getData();
+
+			var l = points.length;
+			for(var p,i=0; i<l; i++) {
+				p = points[i];
+				var at = p[0] + (p[1] * c);
+				insert[at] = data;
+			}	
+			return insert;
+		},
+
+			resizeTo:function(w, h) {
+			this.node.setStyles({width: w, height: h});
+		}
+	});
+
 
 	/**
 	 * TextRenderer

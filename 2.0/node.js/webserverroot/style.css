@@ -162,3 +162,69 @@ canvas {
 	float: left;
 	margin-left: 5px;
 }
+
+
+.divRenderer .a, .divRenderer .b, .divRenderer .c, .divRenderer .d, .divRenderer .e, .divRenderer .f, .divRenderer .g, .divRenderer .trans {
+	position: relative;
+	float: left;
+	display: block;
+	width: 9.1%;
+	height: 4.5%;
+	margin: 0;
+	padding:0;
+	line-height: 1px;
+	-moz-box-sizing: border-box;
+	font-size: 2px;
+
+}
+
+
+.divRenderer {
+	display: block;
+	position: relative;
+	top: 10%;
+	left: 40%;
+	margin-left: -120px;
+	-ms-box-sizing: border-box;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+
+}
+
+.divRenderer .a { background-color: #00f0f0; border: 2px outset #00f0f0;}
+.divRenderer .b { background-color: #0000f0; border: 2px outset #0000f0;}
+.divRenderer .c { background-color: #f0a000; border: 2px outset #f0a000;}
+.divRenderer .d { background-color: #f0f000; border: 2px outset #f0f000;}
+.divRenderer .e { background-color: #00f000; border: 2px outset #00f000;}
+.divRenderer .f { background-color: #a000f0; border: 2px outset #a000f0;}
+.divRenderer .g { background-color: #f00000; border: 2px outset #f00000;}
+.trans { background-color: #EFEFEF; border: 2px solid #EFEFEF; border-top: 2px solid white; border-right: 2px solid white;   }
+
+.ghost {
+	opacity: 0.2;
+}
+
+.lineclear {
+	clear: right;
+	width: 0;
+	height: 0;
+	padding:0; margin:0;
+}
+
+.shapequeue {
+	position: absolute;
+	top: 150px;
+	left:0;
+}
+
+.shapequeue h2 {
+	font-family: verdana;
+	font-weight: normal;
+	font-size: 14px;
+}
+
+.shapequeue canvas {
+	clear: left;
+	margin: 5px;
+	border: 1px solid black;
+}

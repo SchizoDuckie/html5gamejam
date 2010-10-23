@@ -177,18 +177,24 @@ var GameClient = new Class({
 		$('game').get('slide').slideIn();
 
 		var arrowKeys = new Tetris.Keyboard({ 
-			map:{ 
-				65: Tetris.ROTATE_LEFT,
-				36: Tetris.ROTATE_LEFT,
-				33: Tetris.ROTATE_RIGHT,
-				38: Tetris.ROTATE_RIGHT,
-				83: Tetris.ROTATE_RIGHT,
-				37: Tetris.MOVE_LEFT, 
-				39: Tetris.MOVE_RIGHT,
-				40: Tetris.MOVE_DOWN,
-				12: Tetris.DROP,
-				32: Tetris.DROP
-			}
+		map:{ 
+			65: Tetris.ROTATE_LEFT,
+			103 : Tetris.ROTATE_LEFT,
+			36: Tetris.ROTATE_LEFT,
+			33: Tetris.ROTATE_RIGHT,
+			38: Tetris.ROTATE_RIGHT,
+			104: Tetris.ROTATE_RIGHT,
+			83: Tetris.ROTATE_RIGHT,
+			37: Tetris.MOVE_LEFT, 
+			100: Tetris.MOVE_LEFT, 
+			39: Tetris.MOVE_RIGHT,
+			102: Tetris.MOVE_RIGHT,
+			40: Tetris.MOVE_DOWN,
+			98: Tetris.MOVE_DOWN,
+			12: Tetris.DROP,
+			101: Tetris.DROP,
+			32: Tetris.DROP
+		}
 		});
 
 
