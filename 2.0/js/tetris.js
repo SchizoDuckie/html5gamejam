@@ -9,14 +9,20 @@ $(window).addEvent('domready', function() {
 	var arrowKeys = new Tetris.Keyboard({ 
 		map:{ 
 			65: Tetris.ROTATE_LEFT,
+			103 : Tetris.ROTATE_LEFT,
 			36: Tetris.ROTATE_LEFT,
 			33: Tetris.ROTATE_RIGHT,
 			38: Tetris.ROTATE_RIGHT,
+			104: Tetris.ROTATE_RIGHT,
 			83: Tetris.ROTATE_RIGHT,
 			37: Tetris.MOVE_LEFT, 
+			100: Tetris.MOVE_LEFT, 
 			39: Tetris.MOVE_RIGHT,
+			102: Tetris.MOVE_RIGHT,
 			40: Tetris.MOVE_DOWN,
+			98: Tetris.MOVE_DOWN,
 			12: Tetris.DROP,
+			101: Tetris.DROP,
 			32: Tetris.DROP
 		}
 	});
@@ -24,7 +30,7 @@ $(window).addEvent('domready', function() {
 
 	var player1 = new Tetris({
 		target: document.body,
-		renderer: Browser.Engine.name == 'trident' ? Tetris.TextRenderer : Tetris.CanvasRenderer,
+		renderer: Tetris.DivRenderer,
 		controller: arrowKeys,
 		cols: 10,
 		rows: 20,
@@ -128,10 +134,7 @@ var Tetris = (function() {
 
 		stop: function() {
 			clearInterval(this.timer);
-			this.getContainer().adopt(new Element('button', {value: 'Game Over, Reset?'}).addEvent('click', function(e) {
-				this.reset.bind(this);
-				$(e.target).dispose();
-			}));
+			if(confirm('again?!')) this.reset();
 		},
 
 		remove: function() {
@@ -197,13 +200,12 @@ var Tetris = (function() {
 			var shape = this.shape;
 			
 			if(model.fits(shape.movedBy(0,1))) {
-				shape.moveBy(0, 1);
+	                       shape.moveBy(0, 1);
 			} else {
-				this.fireEvent('drop', {model: model.data, shape: shape.getPoints()}); 
 				model.put(shape);
 				this.newShape();
+				this.fireEvent('drop', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData()}); 
 			}
-
 			this.update();
 		},
 
@@ -244,15 +246,17 @@ var Tetris = (function() {
 
 		setGame: function(game) {
 			this.game = game;
-			// let's try to keep this at least cross-browser :P
-			$(window).addEvent('keydown',  this.handleKeyup.bind(this));
+			
+			$(document).addEvent('keydown',  this.handleKeyup.bind(this));
 		},
 
 		handleKeyup: function(e) {
-
-			var command = this.options.map[e.code];
-			if(command) {
-				this.game.handleCommand(command);
+			if(e.target.tagName.toLowerCase() != 'input') {
+				var command = this.options.map[e.code];
+				if(command) {
+					this.game.handleCommand(command);
+						e.stop();
+				}
 			}
 		}
 	});
@@ -322,15 +326,50 @@ var Tetris = (function() {
 
 		setGame: function(game) {
 			this.game = game;
+			this.game.stop = function() {
+				
+			}	
+			this.game.renderer.drawShape = this.drawShape.bind(game.renderer);
+			this.game.renderer.draw = this.draw.bind(game.renderer);
 			game.stop();
 			game.heartbeat = function() {};
 			this.game.addEvent('newData', this.drawRemote.bind(this));
 		},
 		
 		drawRemote: function(data) {
-			this.game.shape.points = data.shape;
-			this.game.model.data = data.model;
+			this.game.shape.points = data.shapePoints;
+			this.game.shape.data = data.shapeData;
+			this.game.model.data = RLE.decode(data.model);
 			this.game.renderer.draw(this.game.model, this.game.shape, this.game.shape);
+
+		},
+		
+		draw: function(model, shape) {
+			this.model = model;
+			this.spriteWidth = this.canvas.width / model.width;
+			this.spriteHeight = this.canvas.height / model.height;
+			this.drawModel(model);
+		},
+
+
+		
+		drawShape: function(shape) {
+			var sw = this.spriteWidth;
+			var sh = this.spriteHeight;
+			var c = this.model.width;
+			var ctx = this.context;
+
+			var points = shape.getPoints();
+			var data = shape.getData();
+			var sprite = this.getSprite(data);
+			
+			var l = points.length;
+			for(var p,i=0; i<l; i++) {
+				p = points[i];				
+				x = (p[0] % c) * sw || Math.floor(c /2) * sw;
+				y = p[1] * sh || sh ;
+				ctx.drawImage(sprite, x, y, sw, sh);					
+			}
 		}
 	});
 
@@ -352,15 +391,34 @@ var Tetris = (function() {
 			[[-1,0], [0,-1],[0,0], [1,0]],	// T
 			[[-1,-1],[0,-1],[0,0], [1,0]]	// Z
 		],
+		
+		queue: [],
 			
 		initialize: function(options) {
 			this.setOptions(options);
+			this.getShapes(4);
 		},
 
-		getShape: function(n) {
+		getShapes: function(n) {
+			for(i=0;i<n;i++) {
+				this.queue.push(this.newShape());
+			}
+		},
+
+		newShape: function(n) {
 			var l = this.shapes.length;
 			var r = n || _floor(_random() * l);
 			return new Tetris.Shape(this.shapes[r], r + 1);
+		},
+
+		getPreview: function() {
+			return(this.queue[0]);
+		},
+
+
+		getShape: function(n) {
+			this.getShapes(1);
+			return this.queue.shift();
 		}
 	});
 
@@ -487,6 +545,11 @@ var Tetris = (function() {
 
 		check: function(min, max) {
 			var w = this.width;
+			if(!this.newLine) {
+				this.newLine =[];
+				for(i=0;i<w;i++){ this.newLine[i]=0; } 
+			}
+
 			for(var i=min; i<max; i++) {
 				if(!this.data[i]) {
 					i = (i + w) - (i % w) -1;
@@ -496,7 +559,7 @@ var Tetris = (function() {
 				if((i + 1) % w == 0) {
 					var at = i - w + 1;
 					this.data.splice(at, w);
-					this.data.unshift.apply(this.data, new Array(w));
+					this.data.unshift.apply(this.data, this.newLine);
 				}
 			}
 
@@ -671,6 +734,88 @@ var Tetris = (function() {
 			this.context = canvas.getContext('2d');
 		}
 	});
+
+
+	/**
+	 * DivRenderer
+	 * 
+	 */
+
+	Tetris.DivRenderer = new Class({
+		Implements: [Events, Options],
+
+		chars: [
+			'trans',
+			'a',
+			'b',
+			'c',
+			'd',
+			'e',
+			'f',
+			'g',
+		],
+
+		grid:[],
+
+		initialize: function(options) {
+			this.setOptions(options);
+			this.node = new Element('div').addClass('divRenderer').inject(options.target);
+			options.target.appendChild(this.node);
+			this.resizeTo(options.width, options.height);
+		},
+
+		getContainer: function() {
+			return this.node;
+		},
+
+		getChar: function(data) {
+			return this.chars[data];
+		},
+
+		drawGrid: function(length, width) {
+			this.grid = new Array(length);
+			for(var i=0; i<length; i++) {
+				this.grid[i] = new Element('div').addClass('trans').inject(this.node);
+				if((i + 1) % width == 0) {
+					new Element('div').addClass("lineclear").inject(this.node)
+				}
+			}
+
+		},
+
+		draw: function(model, shape, ghost) {		
+			if(this.grid.length != model.total) this.drawGrid(model.total, model.width);
+				
+			var shape = this.drawShape(shape,model);
+			var ghost = this.drawShape(ghost,model);
+		
+			for(var i=0; i< model.total; i++) {
+				this.grid[i].set('class', (ghost[i] && !shape[i] ? 'ghost ' : '') + this.getChar(shape[i] || ghost[i] || model.data[i] || 0));
+				//if(ghost[i]) this.grid[i].addClass('ghost');
+				
+			}
+		},
+
+		drawShape: function(shape, model) {
+			var insert = [];
+			var c = model.width;
+			var points = shape.getPoints();
+			var data = shape.getData();
+
+			var l = points.length;
+			for(var p,i=0; i<l; i++) {
+				p = points[i];
+				var at = p[0] + (p[1] * c);
+				insert[at] = data;
+			}	
+			return insert;
+		},
+
+			resizeTo:function(w, h) {
+			this.node.setStyles({width: w, height: h});
+		}
+	});
+
 
 	/**
 	 * TextRenderer
