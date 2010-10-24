@@ -239,6 +239,7 @@ var GameClient = new Class({
 		});
 
 		this.player1.addEvent('heartbeat', this.publishGameState.bind(this));
+		this.player1.addEvent('gameover', this.highScoreCheck.bind(this));
 		this.mockGames = {};
 
 		this.pubSub('/game/chat', { username:this.username, message: 'Just entered the game room' }, '/game/chat', this.handleChat);
@@ -246,6 +247,40 @@ var GameClient = new Class({
 		this.pubSub('/game/savestate/'+this.username, {username: this.username, timestamp: new Date().getTime()}, '/game/states', this.handleMockGames.bind(this));
 
 	},
+
+	highScoreCheck: function() {
+		var ls = new LocalStorage();
+		if(this.player1.scoring.score >  ls.get('globalHighscore')) {
+			if(confirm('New Highscore! Want to save your result of '+this.player1.scoring.score+' @ level'+this.player1.scoring.level+'?')) {
+				ls.set('globalHighscore', this.player1.scoring.score);
+				var highscores = ls.get('highscores') || new Array();
+				var score = this.player1.scoring;
+				score.timestamp = new Date().getTime();
+				score.username = this.username;
+				highscores.unshift(score);
+				ls.set('highscores', highscores);
+			}
+		}
+		if(confirm('Again?')) this.player1.reset();
+	},
+
+	showHighscores: function() {
+		var ls = new LocalStorage();
+		var highscores = ls.get('highscores');
+		dbg('hiscores found!', highscores);
+		if(highscores) {
+			var out = "\nRank\t\tPoints\t\tLevel\t\tUser\t\tTime\t\t\t\n";
+			for(i=0; i<highscores.length; i++) {
+				out += "\t#"+(i +1)+"\t\t"+highscores[i].score+"\t\t"+highscores[i].level+"\t\t"+highscores[i].username+"\t\t"+new Date(highscores[i].timestamp).toString().split(' ').slice(0,5).join(' ')+'\n' ;
+			}
+			new Element('div').adopt(new Element('pre').set('html', out)).inject(document.body,  'top');
+		}
+		else {
+			alert("No highscores yet! Go play!");
+		}
+	},
+
+
 
 	cleanupKicked: function(kicked) {
 		dbg("Received kicked message", kicked);
@@ -256,6 +291,7 @@ var GameClient = new Class({
 				username: this.username, 
 				shapeData: state.shapeData, 
 				shapePoints:state.shapePoints, 
+				score: state.score,
 				model: RLE.encode(state.model.join('')), 
 				timestamp: new Date().getTime()
 		});

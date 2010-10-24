@@ -18,6 +18,7 @@ window.Tetris = (function() {
 	};
 	var _round = Math.round;
 	var _floor = Math.floor;
+	var _ceil = Math.ceil;
 	var _min = Math.min;
 	var _max = Math.max;
 	var _sin = Math.sin;
@@ -91,6 +92,7 @@ window.Tetris = (function() {
 
 			if(!this.model.fits(this.shape)) {
 				this.stop();
+				this.fireEvent('gameover');
 			}
 		},
 
@@ -110,9 +112,6 @@ window.Tetris = (function() {
 
 		stop: function(dontReset) {
 			clearInterval(this.timer);
-			if(!dontReset) {
-				if(confirm('again?!')) this.reset();
-			}
 		},
 
 		remove: function() {
@@ -197,7 +196,7 @@ window.Tetris = (function() {
 			} else {
 				model.put(shape);
 				this.newShape();
-				this.fireEvent('heartbeat', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData()}); 
+				this.fireEvent('heartbeat', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData(), score:this.scoring.getScore()}); 
 			}
 			this.update();
 		},
@@ -248,6 +247,7 @@ window.Tetris = (function() {
 			game.addEvents({'drop':		this.drop.bind(this),
 							'softDrop': this.softDrop.bind(this)
 			});
+			game.model.addEvent('linesRemoved', game.factory.addPowerups.bind(game.factory));
 			this.draw();
 		},
 
@@ -257,6 +257,13 @@ window.Tetris = (function() {
 
 		getScore: function() {
 			return { level: this.level, score:this.score, lines: this.lines};
+		}, 
+
+		setScore: function(s) {
+			this.level = s.level;
+			this.score = s.score;
+			this.lines = s.lines;
+			this.draw();
 		},
 
 		linesRemoved: function(lines){
@@ -426,6 +433,7 @@ window.Tetris = (function() {
 			this.game.shape.points = data.shapePoints;
 			this.game.shape.data = data.shapeData;
 			this.game.model.data = RLE.decode(data.model);
+			if(data.score) this.game.scoring.setScore(data.score);
 			this.game.renderer.draw(this.game.model, this.game.shape, this.game.shape);
 
 		},
@@ -500,9 +508,10 @@ window.Tetris = (function() {
 		},
 
 		// for each line removed, a powerup could possibly be granted.
-		addPowerup: function(linesRemoved) {
-			for(i=0; i<linesRemoved;i++) {
-				dbg('add powerup? ', _random() * l);
+		addPowerups: function(lines) {
+			dbg("addPowerups", lines);
+			for(i=0; i<lines.removed;i++) {
+				dbg('add powerup? ', _ceil(_random() * i));
 			}
 		},
 

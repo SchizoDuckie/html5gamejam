@@ -161,8 +161,24 @@ canvas {
 #mocks div {
 	float: left;
 	margin-left: 5px;
+	position: relative;
+	padding-bottom: 40px;
 }
 
+#mocks .scores {
+	float: none;
+	position: absolute;
+	font-size: 10px;
+	line-height: 11px;
+	width: auto;
+	bottom: 0;
+	text-align: left;
+	margin-top: 30px;
+}
+
+#mocks small {
+	font-size: 10px;
+}
 
 .divRenderer .a, .divRenderer .b, .divRenderer .c, .divRenderer .d, .divRenderer .e, .divRenderer .f, .divRenderer .g, .divRenderer .trans {
 	position: relative;
