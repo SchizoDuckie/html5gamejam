@@ -51,6 +51,7 @@
 	</div>
 
 	<form id="postMessage">
+	  <input type='button' value='T-Spin Testcase' onclick='client.tSpinTest()'>  <input type='button' value='pause' onclick='client.pause()' id='pause'>
 	<p><strong>Game chat:</strong></p>
 	<label for="message">Post a message</label><br>
 	  <input name="message" id="message" >
@@ -69,7 +70,7 @@ $(window).addEvent('domready', function() {
     Faye.logger = function(msg) { if (window.console) console.log(msg) };
 	window.commServer = new Faye.Client('http://' + window.location.hostname + ':'+window.location.port+'/tetrisdemo');
 	
-	var client = new GameClient( {
+	client = new GameClient( {
 		browser: Browser,
 		gameui: $('game'),
 		loginform: $('loginForm'),
@@ -80,7 +81,7 @@ $(window).addEvent('domready', function() {
 });
 </script>
   <a href='http://tetris.wikia.com/wiki/Tetris_Guideline' target='_blank'>Official tetris guideline</a><br>
-  Todo: <a href='http://tetris.wikia.com/wiki/T-spin' target='_blank'>T-spin</a> <a href='http://tetris.wikia.com/wiki/Scoring' target='_blank'>award</a>, Powerups, Logo, Music randomizer, social integration, widgets, touch, 
+  Todo: <a href='http://tetris.wikia.com/wiki/T-spin' target='_blank'>T-spin</a> <a href='http://tetris.wikia.com/wiki/Scoring' target='_blank'>award</a>, Powerups, Logo, Music randomizer, social integration, widgets, touch, <br>
 </div> 
 
 

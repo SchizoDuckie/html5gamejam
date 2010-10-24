@@ -29,8 +29,8 @@ $(window).addEvent('domready', function() {
 
 
 	var player1 = new Tetris({
-		target: document.body,
-		renderer: Tetris.DivRenderer,
+		target: $('tetris'),
+		renderer: Tetris.CanvasRenderer,
 		controller: arrowKeys,
 		cols: 10,
 		rows: 20,
@@ -393,10 +393,24 @@ var Tetris = (function() {
 		],
 		
 		queue: [],
+		renderers: [],
 			
 		initialize: function(options) {
 			this.setOptions(options);
-			this.getShapes(4);
+			this.getShapes(5);
+			
+			this.queueDiv= options.target.appendChild(
+				document.createElement('div')
+			);
+			this.queueDiv.innerHTML ='<h2>Queue:</h2>';
+			this.queueDiv.className = 'shapequeue';
+
+			this.model = new Tetris.Model({cols: 4, rows: 3});
+			this.renderers = [
+				new Tetris.CanvasRenderer({ target:this.queueDiv, width: 50, height:50, cols: 3, rows: 4 }),
+				new Tetris.CanvasRenderer({ target:this.queueDiv, width: 50, height:50, cols: 3, rows: 4 }),
+				new Tetris.CanvasRenderer({ target:this.queueDiv, width: 50, height:50, cols: 3, rows: 4 })
+					];
 		},
 
 		getShapes: function(n) {
@@ -411,14 +425,19 @@ var Tetris = (function() {
 			return new Tetris.Shape(this.shapes[r], r + 1);
 		},
 
-		getPreview: function() {
-			return(this.queue[0]);
+		showPreview: function() {
+			for(i=0;i<this.renderers.length; i++) {
+				this.renderers[i].draw(this.model, this.queue[1+i].moveTo(2,2));
+			}
+			return(this.queue[1]);
 		},
 
 
 		getShape: function(n) {
 			this.getShapes(1);
+			this.showPreview();
 			return this.queue.shift();
+
 		}
 	});
 
@@ -673,7 +692,7 @@ var Tetris = (function() {
 			this.spriteHeight = this.canvas.height / model.height;
 
 			this.drawModel(model);
-			this.drawGhost(ghost);
+			if(ghost)this.drawGhost(ghost);
 			this.drawShape(shape);
 		},
 

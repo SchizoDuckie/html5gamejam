@@ -33,6 +33,31 @@ var GameClient = new Class({
 		window.commServer.publish(pubChannel, data);
 
 	},
+
+	tSpinTest: function() {
+		dbg("Testing  T-Spin!");
+		if(this.player1) {
+			this.player1.model.data = RLE.decode('108A1G3A2G5A8G3A9G2A8G3A9G1A3G');
+			this.player1.factory.queue[0] = this.player1.factory.newShape(5);
+			this.player1.factory.queue[1] = this.player1.factory.newShape(5);
+			this.player1.factory.queue[2] = this.player1.factory.newShape(5);
+			this.player1.shape = this.player1.factory.newShape(5);
+			this.player1.renderer.draw(this.player1.model, this.player1.shape);
+		}
+	},
+
+	pause: function() {
+		if(!this.stopped) {
+			this.stopped = true;
+			this.player1.stop(true);
+			$("pause").set('value', 'resume');
+		} else {
+			this.stopped = false;
+			this.player1.start();
+			$("pause").set('value', 'pause');
+		}
+
+	},
 	
 	login: function(e) {
 		e.stop();
@@ -154,7 +179,7 @@ var GameClient = new Class({
 					}
 					catch (E)
 					{
-						if(window.console) console.debug(E);
+						dbg(E);
 					}
 
 				}
@@ -203,7 +228,7 @@ var GameClient = new Class({
 			new Element('p').addClass('ieFails').set('html', 'You have an inferior browser. Now bow to our ASCII Renderer!').injectInside(document.body).get('slide').hide().slideOut();
 		}
 		var mouse = new Tetris.Mouse();
-		var player1 = new Tetris({
+		this.player1 = new Tetris({
 			target: $('game'),
 			renderer:renderer,
 			controller: arrowKeys,
@@ -213,7 +238,7 @@ var GameClient = new Class({
 			height: 300
 		});
 
-		player1.addEvent('heartbeat', this.publishGameState.bind(this));
+		this.player1.addEvent('heartbeat', this.publishGameState.bind(this));
 		this.mockGames = {};
 
 		this.pubSub('/game/chat', { username:this.username, message: 'Just entered the game room' }, '/game/chat', this.handleChat);
@@ -223,7 +248,7 @@ var GameClient = new Class({
 	},
 
 	cleanupKicked: function(kicked) {
-		if(window.console) console.log("Received kicked message", kicked);
+		dbg("Received kicked message", kicked);
 	},
 
 	publishGameState: function(state) {
@@ -263,6 +288,8 @@ var RLE = new Class({
 		for(i=0; i<s.length -1; i+=2) {
 			output += new Array(1 + parseInt(s[i])).join(this.numberMappings.indexOf(s[i+1]));
 		} 
+		output = output.split('');
+		for(i=0;i<output.length;i++) { output[i] = parseInt(output[i]); }
 		return output;
 	}
 });

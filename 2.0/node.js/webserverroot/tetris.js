@@ -108,9 +108,11 @@ window.Tetris = (function() {
 			this.timer = setInterval(this.heartbeat.bind(this), 1000 - (this.scoring.getLevel() * 50));
 		},
 
-		stop: function() {
+		stop: function(dontReset) {
 			clearInterval(this.timer);
-			if(confirm('again?!')) this.reset();
+			if(!dontReset) {
+				if(confirm('again?!')) this.reset();
+			}
 		},
 
 		remove: function() {
@@ -146,14 +148,15 @@ window.Tetris = (function() {
 			var rotated = shape.rotatedBy(dir);
 			if(model.fits(rotated)) {
 				shape.rotateBy(dir);
-				if(shape.initState == '-1,00,-10,01,0') {
+				if(shape.initState == '-1,00,-10,01,0' && model.detectTspin(shape)) {
 					this.scoring.lastCommand = Tetris.T_SPIN; // zoiets.
+					dbg("T-spin detected!, set last command ", this.scoring.lastCommand);
 					return true;
 				}	
 			} else {
 				var type = shape.state + '-' + rotated.state;
 				var kicks = this.kicks[type];
-//				console.log(kicks, type, this.kicks);
+//				dbg(kicks, type, this.kicks);
 				var l = kicks? kicks.length : 0;
 				for(var kicked,k,x,y,i=0; i<l; i++) {
 					k = kicks[i];
@@ -162,11 +165,13 @@ window.Tetris = (function() {
 					
 					kicked = rotated.movedBy(x, y);
 					if(model.fits(kicked)) {
-					//	console.log("Would fit, kicked", kicked);
+					//	dbg("Would fit, kicked", kicked);
 						shape.rotateBy(dir);
 						shape.moveBy(x, y);
-						if(shape.initState == '-1,00,-10,01,0') this.scoring.lastCommand = Tetris.T_SPIN_KICKED;
-						return true;
+						if(shape.initState == '-1,00,-10,01,0' && model.detectTspin(shape)) {
+							this.scoring.lastCommand = Tetris.T_SPIN_KICKED;
+							return true;
+						}
 					}
 				}
 			}
@@ -220,7 +225,7 @@ window.Tetris = (function() {
 
 		rules: {
 			32: [0, 100, 300, 500, 800, 1000], // Normal line removed.
-			64: [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700]  // cascade combo, increasing 50 per line.
+			64: [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700],  // cascade combo, increasing 50 per line.
 			128 : [100, 800, 1200, 1600],	   // Tetris.T_SPIN  100 points for just placing it even if no lines are removed.
 			256 : [100, 100, 300, 500],		   // Tetris.T_SPIN_KICKED
 		},
@@ -236,10 +241,13 @@ window.Tetris = (function() {
 		setGame:function(game) {
 			this.score =  this.lines = this.lastCommand = 0;
 			this.level = 1;
-			game.model.addEvent('linesRemoved', this.linesRemoved.bind(this));
-			game.addEvent('drop', this.drop.bind(this));
-			game.addEvent('softDrop', this.softDrop.bind(this));
-			game.addEvent('tSpin', this.tSpin.bind(this));
+			game.model.addEvents({
+								'linesRemoved': this.linesRemoved.bind(this),
+								'tSpin':		this.tSpin.bind(this)
+			});
+			game.addEvents({'drop':		this.drop.bind(this),
+							'softDrop': this.softDrop.bind(this)
+			});
 			this.draw();
 		},
 
@@ -254,9 +262,10 @@ window.Tetris = (function() {
 		linesRemoved: function(lines){
 			var points = 0, lc = this.lastCommand;
 			this.lines += lines.removed;
-
+			//dbg("Lines removed, last command was: ", lc, Tetris.T_SPIN);
 			if(lc == Tetris.T_SPIN || lc == Tetris.T_SPIN_KICKED) {
 				points = this.level * this.rules[lc][lines.removed]; 
+				alert("T-Spin baby!, you removed " +lines.removed+" lines and got "+points+" points!");
 				this.fireEvent('tSpin', {points: points, lines:lines});	
 			} else {
 				points = this.level * this.rules[32][lines.removed];		
@@ -281,7 +290,7 @@ window.Tetris = (function() {
 		},
 
 		tSpin: function(points) {
-			alert('T-Spin detection!! bonus points ' + points);
+		//	alert('T-Spin detection!! bonus points ' + points);
 		},
 		
 
@@ -355,7 +364,7 @@ window.Tetris = (function() {
 		},
 
 		handleClick: function(e) {
-			//console.log(e);
+			//dbg(e);
 		}
 	});
 
@@ -381,7 +390,7 @@ window.Tetris = (function() {
 		},
 
 		handleEvent: function(e) {
-			//console.log(e)
+			//dbg(e)
 		}
 	});
 
@@ -488,6 +497,13 @@ window.Tetris = (function() {
 				new Renderer({ target:this.queueDiv, width: 50, height:40, cols: 4, rows: 3 }),
 				new Renderer({ target:this.queueDiv, width: 50, height:40, cols: 4, rows: 3 })
 				];
+		},
+
+		// for each line removed, a powerup could possibly be granted.
+		addPowerup: function(linesRemoved) {
+			for(i=0; i<linesRemoved;i++) {
+				dbg('add powerup? ', _random() * l);
+			}
 		},
 
 		getShapes: function(n) {
@@ -684,7 +700,36 @@ window.Tetris = (function() {
 				}
 			}
 			return true;
+		},
+
+		detectTspin: function(shape) {
+			//dbg("Detecting T-Spin!");
+			var points = shape.getPoints();
+			var l = points.length;
+			var width = this.width - 1;
+			var touchedsides =0;
+				
+			for(var d,p,x,y,i=0; i<l; i++) {
+				p = points[i];
+				x = p[0];
+				y = p[1];
+				var sides = [
+					x - 1 +	(y * this.width), 
+					x +	1 + (y * this.width),
+					x + (y - 1 * this.width),
+					x + (y + 1 *  this.width)
+				];
+				for(j=0; j<sides.length;j++) {
+					touchedsides +=  this.data[sides[j]] && this.data[sides[j]] > 0 ? 1 : 0;
+				}
+				//dbg("Detecting t-spin for point "+x+','+y+' ' , touchedsides);
+				if(x < 0 || x > width || d >= this.total || touchedsides >=3) {
+					return true;
+				}
+			}
+			return false;
 		}
+
 	});
 
 
@@ -1064,3 +1109,8 @@ window.Tetris = (function() {
 	return Tetris;
 
 })();
+
+
+function dbg() {
+	if(window.console) console.debug(arguments);
+}
