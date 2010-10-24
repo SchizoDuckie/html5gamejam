@@ -9,8 +9,13 @@ window.Tetris = (function() {
 	 * Performance
 	 * 
 	 */
-
-	var _random = Math.random;
+	
+	// switched to a little more random seeding to not have a queue of the same blocks.
+	var seed= new Date().getTime();
+	var _random = function() {
+        seed = (new Date().getTime() + seed*9301+49297) % 233280;
+        return seed/(233280.0);
+	};
 	var _round = Math.round;
 	var _floor = Math.floor;
 	var _min = Math.min;
@@ -31,7 +36,6 @@ window.Tetris = (function() {
 
 		initialize: function(options) {
 			this.setOptions(options);
-			this.scoring = new Tetris.Scoring(options);
 		
 			var Renderer = options.renderer;
 			this.renderer = new Renderer(options);
@@ -92,6 +96,8 @@ window.Tetris = (function() {
 
 		reset: function() {
 			this.setModel(new Tetris.Model(this.options));	
+			this.scoring = new Tetris.Scoring(this.options);
+			this.factory.newGame(this);
 			this.scoring.setGame(this);
 
 			this.start();
@@ -211,21 +217,30 @@ window.Tetris = (function() {
 		lines: 0,
 		lastCommand: 0,
 
+
+		rules: {
+			32: [0, 100, 300, 500, 800, 1000], // Normal line removed.
+			64: [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700]  // cascade combo, increasing 50 per line.
+			128 : [100, 800, 1200, 1600],	   // Tetris.T_SPIN  100 points for just placing it even if no lines are removed.
+			256 : [100, 100, 300, 500],		   // Tetris.T_SPIN_KICKED
+		},
+
 		initialize: function(options) {
 
 			this.setOptions(options);
-			this.container = new Element('div', {class: 'scores'}).inject(options.target,'top');
 
+			this.container = $(options.target).getFirst('.scores') || new Element('div', {class: 'scores'}).inject(options.target,'top');
 			this.draw();
 		},
 
 		setGame:function(game) {
-			this.scoring =  this.lines = this.lastCommand = 0;
+			this.score =  this.lines = this.lastCommand = 0;
 			this.level = 1;
 			game.model.addEvent('linesRemoved', this.linesRemoved.bind(this));
 			game.addEvent('drop', this.drop.bind(this));
 			game.addEvent('softDrop', this.softDrop.bind(this));
 			game.addEvent('tSpin', this.tSpin.bind(this));
+			this.draw();
 		},
 
 		getLevel: function() {
@@ -236,44 +251,18 @@ window.Tetris = (function() {
 			return { level: this.level, score:this.score, lines: this.lines};
 		},
 
-		
 		linesRemoved: function(lines){
-			var linesRemoved =0;
+			var points = 0, lc = this.lastCommand;
 			this.lines += lines.removed;
-			var points = 0;
-			switch(lines.removed) {
-				case 0:	break; // huh?
-				case 1:	points = 100 * this.level;	break;
-				case 2: points = 300 * this.level;	break;
-				case 3: points = 500 * this.level;	break;
-				case 4: points = 800 * this.level;	break;
-				default: // higher, on cascade
-					points = 1000 * this.level * lines.removed;
-				break;
-			}
 
-			if(this.lastCommand == Tetris.T_SPIN) { // todo: set these when we detect t-spin, detect t-spin.
-				switch(lines.removed) {
-					case 1: points = 800 * this.level; break;
-					case 2: points = 1200 * this.level; break;
-					case 3: points = 1600 * this.level; break;
-				}
-				this.fireEvent('tSpin', points);			
+			if(lc == Tetris.T_SPIN || lc == Tetris.T_SPIN_KICKED) {
+				points = this.level * this.rules[lc][lines.removed]; 
+				this.fireEvent('tSpin', {points: points, lines:lines});	
+			} else {
+				points = this.level * this.rules[32][lines.removed];		
 			}
-			if(this.lastCommand == Tetris.T_SPIN_KICKED) {
-					switch(lines.removed) {
-					case 1: points = 200 * this.level; break;
-					case 2:	points = 300 * this.level; break;
-					case 3: points = 500 * this.level; break;
-				}
-				this.fireEvent('tSpin', points);
-			}			
-			this.points += points;
-
-			if(this.lines % 10 == 0) {
-				this.level++;
-			}
-
+			this.score += points;
+			if(this.lines % 10 == 0) this.level++;
 			this.draw();
 		},
 
@@ -312,8 +301,8 @@ window.Tetris = (function() {
 	Tetris.MOVE_DOWN  = 5;
 	Tetris.DROP = 6;
 	Tetris.LINE_REMOVED = 7;
-	Tetris.T_SPIN = 8;
-	Tetris.T_SPIN_KICKED = 9;
+	Tetris.T_SPIN = 128;
+	Tetris.T_SPIN_KICKED = 256;
 
 
 
@@ -505,6 +494,11 @@ window.Tetris = (function() {
 			for(i=0;i<n;i++) {
 				this.queue.push(this.newShape());
 			}
+		},
+
+		newGame: function() {
+			this.queue = [];
+			this.getShapes(5);
 		},
 
 		newShape: function(n) {
