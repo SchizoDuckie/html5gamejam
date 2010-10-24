@@ -211,9 +211,20 @@ canvas {
 	padding:0; margin:0;
 }
 
+.scores {
+	position: absolute;
+	top: 140px;
+	left:0;
+	width: 50px;
+}
+
+.scores p {
+	margin:0;
+}
+
 .shapequeue {
 	position: absolute;
-	top: 150px;
+	top: 200px;
 	left:0;
 }
 

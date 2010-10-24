@@ -213,7 +213,7 @@ var GameClient = new Class({
 			height: 300
 		});
 
-		player1.addEvent('drop', this.publishGameState.bind(this));
+		player1.addEvent('heartbeat', this.publishGameState.bind(this));
 		this.mockGames = {};
 
 		this.pubSub('/game/chat', { username:this.username, message: 'Just entered the game room' }, '/game/chat', this.handleChat);
