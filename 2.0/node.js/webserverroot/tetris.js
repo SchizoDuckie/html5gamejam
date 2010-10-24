@@ -46,6 +46,7 @@ window.Tetris = (function() {
 
 		},
 
+		// wall kicks need fixing. don't work.
 		// separate SRS kicks from state a to b as int. 0 is spawnstate, 1 right, 2 upside down, 3 left.
 		kicks: {
 			'0-1' : [[-1, 0], [-1,-1], [ 0, 2], [-1, 2]],
@@ -111,16 +112,16 @@ window.Tetris = (function() {
 		},
 
 		handleCommand: function(type) {
-			
+			override = false; /// for t-spin alert
 			switch (type) {
 				case Tetris.MOVE_LEFT:		this.moveShape(-1, 0);	break;
 				case Tetris.MOVE_RIGHT:		this.moveShape(1, 0);	break;
 				case Tetris.MOVE_DOWN:		if (this.moveShape(0, 1)) this.fireEvent('softDrop'); break;
-				case Tetris.ROTATE_LEFT:	this.rotateShape(-1);	break;
-				case Tetris.ROTATE_RIGHT:	this.rotateShape(1);	break;				
+				case Tetris.ROTATE_LEFT:	override = this.rotateShape(-1); break;
+				case Tetris.ROTATE_RIGHT:	override = this.rotateShape(1);	break;				
 				case Tetris.DROP:			this.fireEvent('drop', this.dropShape()); break;
 			}
-			this.scoring.lastCommand = type;
+			if(!override) this.scoring.lastCommand = type;	
 			this.update();
 		},
 
@@ -137,27 +138,33 @@ window.Tetris = (function() {
 			var model = this.model;
 			var shape = this.shape;
 			var rotated = shape.rotatedBy(dir);
-
 			if(model.fits(rotated)) {
 				shape.rotateBy(dir);
+				if(shape.initState == '-1,00,-10,01,0') {
+					this.scoring.lastCommand = Tetris.T_SPIN; // zoiets.
+					return true;
+				}	
 			} else {
 				var type = shape.state + '-' + rotated.state;
 				var kicks = this.kicks[type];
-
+//				console.log(kicks, type, this.kicks);
 				var l = kicks? kicks.length : 0;
 				for(var kicked,k,x,y,i=0; i<l; i++) {
 					k = kicks[i];
 					x = k[0];
 					y = k[1];
-
+					
 					kicked = rotated.movedBy(x, y);
 					if(model.fits(kicked)) {
+					//	console.log("Would fit, kicked", kicked);
 						shape.rotateBy(dir);
 						shape.moveBy(x, y);
-						break;
+						if(shape.initState == '-1,00,-10,01,0') this.scoring.lastCommand = Tetris.T_SPIN_KICKED;
+						return true;
 					}
 				}
 			}
+			return false;
 		},
 
 		dropShape: function() {
@@ -244,21 +251,22 @@ window.Tetris = (function() {
 					points = 1000 * this.level * lines.removed;
 				break;
 			}
+
 			if(this.lastCommand == Tetris.T_SPIN) { // todo: set these when we detect t-spin, detect t-spin.
 				switch(lines.removed) {
-				case 1: points = 800 * this.level; break;
-				case 2: points = 1200 * this.level; break;
-				case 3: points = 1600 * this.level; break;
+					case 1: points = 800 * this.level; break;
+					case 2: points = 1200 * this.level; break;
+					case 3: points = 1600 * this.level; break;
 				}
-			
+				this.fireEvent('tSpin', points);			
 			}
 			if(this.lastCommand == Tetris.T_SPIN_KICKED) {
-
-				switch(lines.removed) {
+					switch(lines.removed) {
 					case 1: points = 200 * this.level; break;
 					case 2:	points = 300 * this.level; break;
 					case 3: points = 500 * this.level; break;
 				}
+				this.fireEvent('tSpin', points);
 			}			
 			this.points += points;
 
@@ -283,8 +291,8 @@ window.Tetris = (function() {
 			this.draw();
 		},
 
-		tSpin: function() {
-
+		tSpin: function(points) {
+			alert('T-Spin detection!! bonus points ' + points);
 		},
 		
 
@@ -531,6 +539,7 @@ window.Tetris = (function() {
 		Implements: [Events],
 
 		initialize: function(points, data, position, state) {
+			this.initState= points.join(''); // for recognizing T-spin later on
 			this.points = points;
 			this.rotation = new Matrix();
 			this.state = state || 0;
