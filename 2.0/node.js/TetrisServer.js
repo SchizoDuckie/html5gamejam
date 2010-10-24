@@ -6,9 +6,11 @@ var fs    = require('fs'),
 	mootools = require('./mootools-server.js');
 	fayehook = require('./faye-hook.js');
 
+require('./node-cli.js');
+
 var PUBLIC_DIR  = path.dirname(__filename) + '/webserverroot',
     port        = '1234',
-	contentTypes = { 'html' : 'text/html', 'css' : 'text/css', 'js' : 'text/javascript' };
+	contentTypes = { 'html' : 'text/html', 'css' : 'text/css', 'js' : 'text/javascript', 'png':'image/png' };
 
 // create a webserver
 var server = http.createServer(function(request, response) {
@@ -200,10 +202,18 @@ CliRenderer = new Class({
 	initialize: function(shape,data, position, username) {
 		this.username = username;
 		this.position = position || 0;
-		cli.move(14, 4 + ((this.position -1) * 15)).write(this.username);
+		cli.move(14, 4 + ((this.position -1) * 15)).clearNext(15).write(this.username);
 		this.data = data;
 //		cli.move(0,4).clearLine().write(this.data);
-		this.chars = [' ','▓','▒','☻','#','█','☺','░'],
+		this.chars = [' ',
+					'\x1B[0;34;44m▓\x1B[0;0m',
+					'\x1B[0;35m▒\x1B[0;0m',
+					'\x1B[0;36m☻\x1B[0;0m',
+					'\x1B[0;33m#\x1B[0;0m',
+					'\x1B[0;32m█\x1B[0;0m',
+					'\x1B[0;35;35m☺\x1B[0;0m',
+					'\x1B[0;31;31m░\x1B[0;0m'
+		],
 		this.draw(shape,data);
 	},
 
@@ -263,72 +273,11 @@ var RLE = new Class({
 
 Rle = new RLE();
 
-MooCli = new Class({
 
-	colours : {
-	  grey:    30,
-	  red:     31,
-	  green:   32,
-	  yellow:  33,
-	  blue:    34,
-	  magenta: 35,
-	  cyan:    36,
-	  white:   37
-	},
-
-	color: function(color, bold) {
-		sys.print('\x1B['+(bold ? 1 : 0)+';'+this.colors[color]+'m');
-		return(this);
-	},
-
-	resetColor: function() {
-		sys.print('\x1B[0m');
-		return(this);
-	},
-
-	write: function(string) {
-		sys.print(string);
-		return(this);
-	},
-	// Position the Cursor:  \033[<L>;<C>H   Or  \033[<L>;<C>f
-	move: function(x,y) {
-		sys.print('\033['+x+';'+y+'H');
-		return this;
-	},
-	up: function(num) {
-		sys.print('\033['+num+'A');
-		return this;
-	},
-	down: function(num) {
-		sys.print('\033['+num+'B');
-		return this;
-	},
-	fwd: function(num) {
-		sys.print('\033['+num+'C');
-		return this;
-	},
-	back: function(num) {
-		sys.print('\033['+num+'D');
-		return this;
-	},
-	clear: function(num) {
-		sys.print('\033[2J');
-		return this;
-	},
-	clearLine: function(num) {
-		sys.print('\033[K');
-		return this;
-	}
-	
-
-
-});
-
-var cli = new MooCli();
 
 
 new GameMaster('betatest');
 
 
 
-cli.clear().move(38, 5).write('Node.js Tetris Server Listening on port:' + port);
+cli.clear().move(38, 5).color('yellow', true, 'green').write('Node.js Tetris Server Listening on port:' + port).resetColor();
