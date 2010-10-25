@@ -33,6 +33,31 @@ var GameClient = new Class({
 		window.commServer.publish(pubChannel, data);
 
 	},
+
+	tSpinTest: function() {
+		dbg("Testing  T-Spin!");
+		if(this.player1) {
+			this.player1.model.data = RLE.decode('108A1G3A2G5A8G3A9G2A8G3A9G1A3G');
+			this.player1.factory.queue[0] = this.player1.factory.newShape(5);
+			this.player1.factory.queue[1] = this.player1.factory.newShape(5);
+			this.player1.factory.queue[2] = this.player1.factory.newShape(5);
+			this.player1.shape = this.player1.factory.newShape(5);
+			this.player1.renderer.draw(this.player1.model, this.player1.shape);
+		}
+	},
+
+	pause: function() {
+		if(!this.stopped) {
+			this.stopped = true;
+			this.player1.stop(true);
+			$("pause").set('value', 'resume');
+		} else {
+			this.stopped = false;
+			this.player1.start();
+			$("pause").set('value', 'pause');
+		}
+
+	},
 	
 	login: function(e) {
 		e.stop();
@@ -154,7 +179,7 @@ var GameClient = new Class({
 					}
 					catch (E)
 					{
-						if(window.console) console.debug(E);
+						dbg(E);
 					}
 
 				}
@@ -177,18 +202,24 @@ var GameClient = new Class({
 		$('game').get('slide').slideIn();
 
 		var arrowKeys = new Tetris.Keyboard({ 
-			map:{ 
-				65: Tetris.ROTATE_LEFT,
-				36: Tetris.ROTATE_LEFT,
-				33: Tetris.ROTATE_RIGHT,
-				38: Tetris.ROTATE_RIGHT,
-				83: Tetris.ROTATE_RIGHT,
-				37: Tetris.MOVE_LEFT, 
-				39: Tetris.MOVE_RIGHT,
-				40: Tetris.MOVE_DOWN,
-				12: Tetris.DROP,
-				32: Tetris.DROP
-			}
+		map:{ 
+			65: Tetris.ROTATE_LEFT,
+			103 : Tetris.ROTATE_LEFT,
+			36: Tetris.ROTATE_LEFT,
+			33: Tetris.ROTATE_RIGHT,
+			38: Tetris.ROTATE_RIGHT,
+			104: Tetris.ROTATE_RIGHT,
+			83: Tetris.ROTATE_RIGHT,
+			37: Tetris.MOVE_LEFT, 
+			100: Tetris.MOVE_LEFT, 
+			39: Tetris.MOVE_RIGHT,
+			102: Tetris.MOVE_RIGHT,
+			40: Tetris.MOVE_DOWN,
+			98: Tetris.MOVE_DOWN,
+			12: Tetris.DROP,
+			101: Tetris.DROP,
+			32: Tetris.DROP
+		}
 		});
 
 
@@ -197,7 +228,7 @@ var GameClient = new Class({
 			new Element('p').addClass('ieFails').set('html', 'You have an inferior browser. Now bow to our ASCII Renderer!').injectInside(document.body).get('slide').hide().slideOut();
 		}
 		var mouse = new Tetris.Mouse();
-		var player1 = new Tetris({
+		this.player1 = new Tetris({
 			target: $('game'),
 			renderer:renderer,
 			controller: arrowKeys,
@@ -207,7 +238,8 @@ var GameClient = new Class({
 			height: 300
 		});
 
-		player1.addEvent('drop', this.publishGameState.bind(this));
+		this.player1.addEvent('heartbeat', this.publishGameState.bind(this));
+		this.player1.addEvent('gameover', this.highScoreCheck.bind(this));
 		this.mockGames = {};
 
 		this.pubSub('/game/chat', { username:this.username, message: 'Just entered the game room' }, '/game/chat', this.handleChat);
@@ -216,8 +248,42 @@ var GameClient = new Class({
 
 	},
 
+	highScoreCheck: function() {
+		var ls = new LocalStorage();
+		if(this.player1.scoring.score >  ls.get('globalHighscore')) {
+			if(confirm('New Highscore! Want to save your result of '+this.player1.scoring.score+' @ level'+this.player1.scoring.level+'?')) {
+				ls.set('globalHighscore', this.player1.scoring.score);
+				var highscores = ls.get('highscores') || new Array();
+				var score = this.player1.scoring;
+				score.timestamp = new Date().getTime();
+				score.username = this.username;
+				highscores.unshift(score);
+				ls.set('highscores', highscores);
+			}
+		}
+		if(confirm('Again?')) this.player1.reset();
+	},
+
+	showHighscores: function() {
+		var ls = new LocalStorage();
+		var highscores = ls.get('highscores');
+		dbg('hiscores found!', highscores);
+		if(highscores) {
+			var out = "\nRank\t\tPoints\t\tLevel\t\tUser\t\tTime\t\t\t\n";
+			for(i=0; i<highscores.length; i++) {
+				out += "\t#"+(i +1)+"\t\t"+highscores[i].score+"\t\t"+highscores[i].level+"\t\t"+highscores[i].username+"\t\t"+new Date(highscores[i].timestamp).toString().split(' ').slice(0,5).join(' ')+'\n' ;
+			}
+			new Element('div').adopt(new Element('pre').set('html', out)).inject(document.body,  'top');
+		}
+		else {
+			alert("No highscores yet! Go play!");
+		}
+	},
+
+
+
 	cleanupKicked: function(kicked) {
-		if(window.console) console.log("Received kicked message", kicked);
+		dbg("Received kicked message", kicked);
 	},
 
 	publishGameState: function(state) {
@@ -225,6 +291,7 @@ var GameClient = new Class({
 				username: this.username, 
 				shapeData: state.shapeData, 
 				shapePoints:state.shapePoints, 
+				score: state.score,
 				model: RLE.encode(state.model.join('')), 
 				timestamp: new Date().getTime()
 		});
@@ -257,6 +324,8 @@ var RLE = new Class({
 		for(i=0; i<s.length -1; i+=2) {
 			output += new Array(1 + parseInt(s[i])).join(this.numberMappings.indexOf(s[i+1]));
 		} 
+		output = output.split('');
+		for(i=0;i<output.length;i++) { output[i] = parseInt(output[i]); }
 		return output;
 	}
 });

@@ -18,7 +18,7 @@
   <script src="/tetrisdemo.js" type="text/javascript"></script>
   <script src="/mootools.js" type="text/javascript"></script>
   <script src="/mootools-more.js" type="text/javascript"></script>
-  <script src="/mootools-css3.js" type="text/javascript"></script>
+  <script src="/localstorage.js" type="text/javascript"></script>
   <script src="/tetris.js" type="text/javascript"></script>
   <script src="/gameclient.js" type="text/javascript"></script>
 
@@ -51,6 +51,7 @@
 	</div>
 
 	<form id="postMessage">
+	  <input type='button' value='T-Spin Testcase' onclick='client.tSpinTest()'>  <input type='button' value='pause' onclick='client.pause()' id='pause'><input type='button' value='Highscores' onclick='client.showHighscores()'>
 	<p><strong>Game chat:</strong></p>
 	<label for="message">Post a message</label><br>
 	  <input name="message" id="message" >
@@ -69,7 +70,7 @@ $(window).addEvent('domready', function() {
     Faye.logger = function(msg) { if (window.console) console.log(msg) };
 	window.commServer = new Faye.Client('http://' + window.location.hostname + ':'+window.location.port+'/tetrisdemo');
 	
-	var client = new GameClient( {
+	client = new GameClient( {
 		browser: Browser,
 		gameui: $('game'),
 		loginform: $('loginForm'),
@@ -79,8 +80,17 @@ $(window).addEvent('domready', function() {
 	
 });
 </script>
-  
-</div>  
+  <a href='http://tetris.wikia.com/wiki/Tetris_Guideline' target='_blank'>Official tetris guideline</a><br>
+  Todo: <s><a href='http://tetris.wikia.com/wiki/T-spin' target='_blank'>T-spin</a></s> <s><a href='http://tetris.wikia.com/wiki/Scoring' target='_blank'>award</a></s>, Powerups, Logo, Music randomizer, social integration, widgets, touch, <br>
+</div> 
+
+
+<!--<div class='music'>
+Muziekje erbij? <br><iframe title="YouTube video player" class="youtube-player" type="text/html" width="180" height="25" src="http://www.youtube.com/embed/bNwT3ji1v8A?rel=0" frameborder="0"> </iframe>
+</div>-->
+<!-- preload -->
+<img src='sprite.png' style='visibility:hidden'>
+
 </body>
 </html>
 
