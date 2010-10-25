@@ -106,7 +106,8 @@ var Tetris = (function() {
 		},
 
 		newShape: function() {
-			this.shape = this.factory.getShape();
+			this.shape = this.queue.shift();
+			this.queue.push(this.factory.getShape());
 			
 			var x = _floor(this.model.width / 2);
 			this.shape.moveTo(x, 1);
@@ -117,7 +118,13 @@ var Tetris = (function() {
 		},
 
 		reset: function() {
-			this.setModel(new Tetris.Model(this.options));		
+			this.setModel(new Tetris.Model(this.options));
+			
+			this.queue = [];
+			for(var i=0; i<5; i++) {
+				this.queue.push(this.factory.getShape());
+			}
+
 			this.start();
 		},
 
@@ -216,7 +223,7 @@ var Tetris = (function() {
 			while(model.fits(ghost.movedBy(0,1))) {
 				ghost.moveBy(0,1);
 			}
-			this.renderer.draw(model, shape, ghost);
+			this.renderer.draw(model, shape, ghost, this.queue);
 		}
 	});
 
@@ -604,7 +611,7 @@ var Tetris = (function() {
 			return this.sprites[data];
 		},
 
-		draw: function(model, shape, ghost) {
+		draw: function(model, shape, ghost, queue) {
 			this.model = model;
 			this.spriteWidth = this.canvas.width / model.width;
 			this.spriteHeight = this.canvas.height / model.height;
@@ -612,6 +619,7 @@ var Tetris = (function() {
 			this.drawModel(model);
 			this.drawGhost(ghost);
 			this.drawShape(shape);
+			this.drawQueue(queue);
 		},
 
 
@@ -662,6 +670,11 @@ var Tetris = (function() {
 			ctx.globalAlpha = 0.15;
 			this.drawShape(ghost);
 			ctx.restore();
+		},
+
+		drawQueue: function(queue) {
+			var next = queue[0];
+			// todo
 		},
 
 		resizeTo: function(w, h) {
