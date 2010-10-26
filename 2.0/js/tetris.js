@@ -600,7 +600,7 @@ var Tetris = (function() {
 			s.replace(this.powerreg, function(p) {
 				powers.push(p);
 			});
-			console.log(powers)
+		//	console.log(powers)
 			return powers;
 		},
 
