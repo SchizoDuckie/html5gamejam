@@ -1,0 +1,103 @@
+@import url("../types/journal.css");
+
+html,body {
+	margin:0;
+	padding:0;
+	background:#f0f0f0;
+	font-family:arial,sans-serif;
+	font-size:12px;
+}
+
+h1, h2, h3 {
+	font-family:JournalRegular,garamond,georgia,serif;
+	font-size:30px;
+	font-weight:normal;
+	margin:0;
+}
+
+#container {
+	position:relative;
+	width:780px;
+	margin:0 auto;
+}
+
+.panel {
+	position:absolute;
+	background:white;
+	padding:10px;
+	width:120px;
+	height:240px;
+	
+	box-shadow:10px 10px 10px rgba(0,0,0,0.25);
+	-moz-box-shadow:10px 10px 10px rgba(0,0,0,0.25);
+	-webkit-box-shadow:10px 10px 10px rgba(0,0,0,0.25);
+}
+	.panel h1, 
+	.panel h2 {
+		position:absolute;
+		left:10px;
+		top:-35px;
+	}
+
+.score,
+.lines,
+.level,
+.next,
+.hold {
+	font-size:16px;
+	text-align:right;
+	margin:0;
+	font-weight:bold;
+}
+
+#player1 {
+	left:0;
+	top:40px;
+	width:380px;
+	height:535px;
+}
+
+#player2 { left:450px; top:40px; }
+#player3 { left:640px; top:40px; }
+#player4 { left:450px; top:335px; }
+#player5 { left:640px; top:335px; }
+
+#footer { 
+	left:0; 
+	top:625px; 
+	width:760px;
+	height:80px;
+}
+	#footer .legal {
+		position:absolute;
+		right:0;
+		bottom:-30px;
+	}
+
+.game, .powerups {
+	background:#f8f8f8;
+	width:120px;
+	height:240px;
+	
+	box-shadow:5px 5px 5px rgba(0,0,0,0.1) inset;
+	-moz-box-shadow:5px 5px 5px rgba(0,0,0,0.1) inset;
+	-webkit-box-shadow:5px 5px 5px rgba(0,0,0,0.1) inset;
+}
+	#player1 .game {
+		float:left;
+		width:250px;
+		height:500px;
+	}
+
+	#player1 .powerups {
+		position:relative;
+		clear:both;
+		width:250px;
+		height:25px;
+		top:10px;
+	}
+
+	#player1 .details {
+		float:right;
+		width:120px;
+	}
