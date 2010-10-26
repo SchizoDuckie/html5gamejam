@@ -44,7 +44,7 @@ window.Tetris = (function() {
 			this.factory = new Tetris.ShapeFactory(options);
 
 			this.controller = options.controller;
-			this.controller.setGame(this);
+			
 	
 		
 			this.reset();
@@ -91,9 +91,11 @@ window.Tetris = (function() {
 			this.shape.moveTo(x, 1);
 
 			if(!this.model.fits(this.shape)) {
-				this.fireEvent('gameover');
 				this.stop();
+				this.fireEvent('gameover');
+				return false;
 			}
+			return true;
 		},
 
 		reset: function() {
@@ -101,18 +103,18 @@ window.Tetris = (function() {
 			this.scoring = new Tetris.Scoring(this.options);
 			this.factory.newGame(this);
 			this.scoring.setGame(this);
-
 			this.start();
 		},
 
 		start: function() {
+			this.controller.setGame(this);
 			this.newShape();
 			this.heartbeat();
 		},
 
 		pause: function() {
 			if(!this.paused) {
-				this.stop();
+				clearTimeout(this.timer);
 				this.paused = true;
 			} else {
 				this.paused = false;
@@ -121,6 +123,7 @@ window.Tetris = (function() {
 		},
 
 		stop: function(dontReset) {
+			this.controller.stopGame();
 			clearTimeout(this.timer);
 			this.timer = false;
 		},
@@ -207,8 +210,11 @@ window.Tetris = (function() {
 				shape.moveBy(0, 1);
 			} else {
 				model.put(shape);
-				this.newShape();
-				this.fireEvent('heartbeat', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData(), score:this.scoring.getScore()}); 
+				if (!this.newShape()) {
+					return this.stop();	
+				} else {
+					this.fireEvent('heartbeat', {model: model.data, shapePoints: this.shape.getPoints(), shapeData: this.shape.getData(), score:this.scoring.getScore()}); 
+				}
 			}
 			this.update();
 			this.timer = setTimeout(this.heartbeat.bind(this), 1000 - (this.scoring.getLevel() * 50));
@@ -263,6 +269,8 @@ window.Tetris = (function() {
 			game.model.addEvent('linesRemoved', game.factory.addPowerups.bind(game.factory));
 			this.draw();
 		},
+
+
 
 		getLevel: function() {
 			return this.level;
@@ -350,13 +358,18 @@ window.Tetris = (function() {
 
 		setGame: function(game) {
 			this.game = game;
-			
-			$(document).addEvent('keydown',  this.handleKeyup.bind(this));
+			$(document).addEvent('keydown',  this._ = this.handleKeyup.bind(this));
+		},
+		
+		stopGame: function(game) {
+			this.game = false;
+			$(document).removeEvent('keydown',  this._);
+			dbg('keyboard hook detached');
 		},
 
 		handleKeyup: function(e) {
 			if(e.target.tagName.toLowerCase() != 'input') {
-					dbg(e.code);
+				
 				var command = this.options.map[e.code];
 				if(command) {
 					this.game.handleCommand(command);
@@ -381,10 +394,15 @@ window.Tetris = (function() {
 			this.setOptions(options);
 		},
 
+		stopGame: function(game) {
+			this.game = false;
+			$(document).removeEventListener('click',  this._);
+		},
+
 		setGame: function(game) {
 			this.game = game;
 			var target = game.getContainer();
-			target.addEventListener('click', this.handleClick.bind(this), false);
+			target.addEventListener('click', this._ = this.handleKeyup.bind(this), false);
 		},
 
 		handleClick: function(e) {
@@ -408,9 +426,19 @@ window.Tetris = (function() {
 		setGame: function(game) {
 			this.game = game;
 			var target = game.getContainer();
-			target.addEventListener('touchstart', this);
-			target.addEventListener('touchmove', this);
-			target.addEventListener('touchend', this);
+			this._ = this.handleEvent.bind(this);
+			target.addEventListener('touchstart', this._);
+			target.addEventListener('touchmove', this._);
+			target.addEventListener('touchend', this._);
+		},
+
+
+		stopGame: function(game) {
+			var target = this.game.getContainer();
+			target.removeEventListener('touchstart', this._);
+			target.removeEventListener('touchmove', this._);
+			target.removeEventListener('touchend', this._);
+			target = this.game = false;
 		},
 
 		handleEvent: function(e) {
@@ -446,6 +474,10 @@ window.Tetris = (function() {
 			this.game.addEvent('newData', this.drawRemote.bind(this));
 		},
 		
+		stopGame: function() {
+
+		},
+
 		drawRemote: function(data) {
 			this.game.shape.points = data.shapePoints;
 			this.game.shape.data = data.shapeData;
