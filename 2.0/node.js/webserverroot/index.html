@@ -1,9 +1,8 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
-
 <html>
 <head>
   <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
-	<meta name="viewport" content="width=device-width; height=device-height; initial-scale=1.0;"> 
+	<meta name="viewport" content="width=device-width; initial-scale=1.0;"> 
 
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-touch-fullscreen" content="yes">
@@ -15,6 +14,7 @@
 
   <title>Multitris demo - Work In Progress</title>
   <link rel="stylesheet" href="/style.css" type="text/css" media="screen">
+  <!--[if lt IE 9]><script src="/excanvas.js" type="text/javascript"></script><![endif]-->
   <script src="/tetrisdemo.js" type="text/javascript"></script>
   <script src="/mootools.js" type="text/javascript"></script>
   <script src="/mootools-more.js" type="text/javascript"></script>
@@ -26,7 +26,7 @@
 <body>
 <div class="container">
   
-  <h1><em>Multitris</em> | experimental/WIP<br><small style='float:right; font-size: 10px; margin-top: -5px;'> by Clay & SchizoDuckie </small></h1>
+  <h1><em>Tets!</em>.it<br><small style='float:right; font-size: 10px; margin-top: -5px;'> by Clay & SchizoDuckie </small></h1>
   <div id='gamestatus'></div>
   
    <form id='loginForm'>
@@ -51,7 +51,7 @@
 	</div>
 
 	<form id="postMessage">
-	  <input type='button' value='T-Spin Testcase' onclick='client.tSpinTest()'>  <input type='button' value='pause' onclick='client.pause()' id='pause'><input type='button' value='Highscores' onclick='client.showHighscores()'>
+	  <input type='button' value='T-Spin Testcase' onclick='client.tSpinTest()'>  <input type='button' value='pause' onclick='client.player1.pause()' id='pause'><input type='button' value='Highscores' onclick='client.showHighscores()'> <input type='button' value='powerup' onclick='client.powerupTest()'><input type='button' value='level +5' onclick='client.player1.scoring.level += 5; '>
 	<p><strong>Game chat:</strong></p>
 	<label for="message">Post a message</label><br>
 	  <input name="message" id="message" >
@@ -77,20 +77,19 @@ $(window).addEvent('domready', function() {
 		chatform: $('onlinewrap'),
 		status: $('loginstatus')
 	});
-	
 });
 </script>
-  <a href='http://tetris.wikia.com/wiki/Tetris_Guideline' target='_blank'>Official tetris guideline</a><br>
-  Todo: <s><a href='http://tetris.wikia.com/wiki/T-spin' target='_blank'>T-spin</a></s> <s><a href='http://tetris.wikia.com/wiki/Scoring' target='_blank'>award</a></s>, Powerups, Logo, Music randomizer, social integration, widgets, touch, <br>
-</div> 
-
+  
 
 <!--<div class='music'>
 Muziekje erbij? <br><iframe title="YouTube video player" class="youtube-player" type="text/html" width="180" height="25" src="http://www.youtube.com/embed/bNwT3ji1v8A?rel=0" frameborder="0"> </iframe>
-</div>-->
+</div>
+<a href='http://tetris.wikia.com/wiki/Tetris_Guideline' target='_blank'>Official tetris guideline</a><br>
+  Todo: <s><a href='http://tetris.wikia.com/wiki/T-spin' target='_blank'>T-spin</a></s> <s><a href='http://tetris.wikia.com/wiki/Scoring' target='_blank'>award</a></s>, Powerups, Logo, Music randomizer, social integration, widgets, touch, <br>
+-->
 <!-- preload -->
-<img src='sprite.png' style='visibility:hidden'>
+
+<img src='sprite.png' style='display:none;'>
 
 </body>
 </html>
-

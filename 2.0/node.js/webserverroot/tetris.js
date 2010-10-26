@@ -44,7 +44,7 @@ window.Tetris = (function() {
 			this.factory = new Tetris.ShapeFactory(options);
 
 			this.controller = options.controller;
-			this.controller.setGame(this);
+			
 	
 		
 			this.reset();
@@ -93,7 +93,9 @@ window.Tetris = (function() {
 			if(!this.model.fits(this.shape)) {
 				this.stop();
 				this.fireEvent('gameover');
+				return false;
 			}
+			return true;
 		},
 
 		reset: function() {
@@ -101,17 +103,29 @@ window.Tetris = (function() {
 			this.scoring = new Tetris.Scoring(this.options);
 			this.factory.newGame(this);
 			this.scoring.setGame(this);
-
 			this.start();
 		},
 
 		start: function() {
+			this.controller.setGame(this);
 			this.newShape();
-			this.timer = setInterval(this.heartbeat.bind(this), 1000 - (this.scoring.getLevel() * 50));
+			this.heartbeat();
+		},
+
+		pause: function() {
+			if(!this.paused) {
+				clearTimeout(this.timer);
+				this.paused = true;
+			} else {
+				this.paused = false;
+				this.heartbeat();
+			}
 		},
 
 		stop: function(dontReset) {
-			clearInterval(this.timer);
+			this.controller.stopGame();
+			clearTimeout(this.timer);
+			this.timer = false;
 		},
 
 		remove: function() {
@@ -121,12 +135,13 @@ window.Tetris = (function() {
 		handleCommand: function(type) {
 			override = false; /// for t-spin alert
 			switch (type) {
-				case Tetris.MOVE_LEFT:		this.moveShape(-1, 0);	break;
-				case Tetris.MOVE_RIGHT:		this.moveShape(1, 0);	break;
+				case Tetris.MOVE_LEFT:		this.moveShape(-1, 0);						break;
+				case Tetris.MOVE_RIGHT:		this.moveShape(1, 0);						break;
 				case Tetris.MOVE_DOWN:		if (this.moveShape(0, 1)) this.fireEvent('softDrop'); break;
-				case Tetris.ROTATE_LEFT:	override = this.rotateShape(-1); break;
-				case Tetris.ROTATE_RIGHT:	override = this.rotateShape(1);	break;				
-				case Tetris.DROP:			this.fireEvent('drop', this.dropShape()); break;
+				case Tetris.ROTATE_LEFT:	override = this.rotateShape(-1);			break;
+				case Tetris.ROTATE_RIGHT:	override = this.rotateShape(1);				break;				
+				case Tetris.DROP:			this.fireEvent('drop', this.dropShape());	break;
+				case Tetris.PAUSE:			this.pause();								break;
 			}
 			if(!override) this.scoring.lastCommand = type;	
 			this.update();
@@ -195,10 +210,14 @@ window.Tetris = (function() {
 				shape.moveBy(0, 1);
 			} else {
 				model.put(shape);
-				this.newShape();
-				this.fireEvent('heartbeat', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData(), score:this.scoring.getScore()}); 
+				if (!this.newShape()) {
+					return this.stop();	
+				} else {
+					this.fireEvent('heartbeat', {model: model.data, shapePoints: this.shape.getPoints(), shapeData: this.shape.getData(), score:this.scoring.getScore()}); 
+				}
 			}
 			this.update();
+			this.timer = setTimeout(this.heartbeat.bind(this), 1000 - (this.scoring.getLevel() * 50));
 		},
 
 		update: function() {
@@ -206,7 +225,7 @@ window.Tetris = (function() {
 			var shape = this.shape;
 			var ghost;
 
-			ghost = shape.clone();
+			ghost = shape.clone(this.state);
 			while(model.fits(ghost.movedBy(0,1))) {
 				ghost.moveBy(0,1);
 			}
@@ -224,16 +243,16 @@ window.Tetris = (function() {
 
 		rules: {
 			32: [0, 100, 300, 500, 800, 1000], // Normal line removed.
-			64: [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700],  // cascade combo, increasing 50 per line.
-			128 : [100, 800, 1200, 1600],	   // Tetris.T_SPIN  100 points for just placing it even if no lines are removed.
-			256 : [100, 100, 300, 500],		   // Tetris.T_SPIN_KICKED
+			64: [0, 100, 300, 500, 800, 1000, 1500, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],  // cascade combo, increasing 50 per line.
+			128 : [0, 100, 800, 1200, 1600, 1800, 2500, 4000, 6500, 8000, 10000, 12000, 14000, 16000, 18000, 20000],	   // Tetris.T_SPIN  100 points for just placing it even if no lines are removed.
+			256 : [0, 100, 300, 500, 800, 1000, 1500, 2000, 3000, 3500, 4000, 4500, 5000, 5500, 6000]		   // Tetris.T_SPIN_KICKED
 		},
 
 		initialize: function(options) {
 
 			this.setOptions(options);
 
-			this.container = $(options.target).getFirst('.scores') || new Element('div', {class: 'scores'}).inject(options.target,'top');
+			this.container = $(options.target).getFirst('.scores') || new Element('div', {'class': 'scores'}).inject(options.target,'top');
 			this.draw();
 		},
 
@@ -250,6 +269,8 @@ window.Tetris = (function() {
 			game.model.addEvent('linesRemoved', game.factory.addPowerups.bind(game.factory));
 			this.draw();
 		},
+
+
 
 		getLevel: function() {
 			return this.level;
@@ -275,7 +296,7 @@ window.Tetris = (function() {
 				alert("T-Spin baby!, you removed " +lines.removed+" lines and got "+points+" points!");
 				this.fireEvent('tSpin', {points: points, lines:lines});	
 			} else {
-				points = this.level * this.rules[32][lines.removed];		
+				points = this.level * (this.rules[32][lines.removed] || this.rules[64][lines.removed]) ;		
 			}
 			this.score += points;
 			if(this.lines % 10 == 0) this.level++;
@@ -317,6 +338,7 @@ window.Tetris = (function() {
 	Tetris.MOVE_DOWN  = 5;
 	Tetris.DROP = 6;
 	Tetris.LINE_REMOVED = 7;
+	Tetris.PAUSE = 8;
 	Tetris.T_SPIN = 128;
 	Tetris.T_SPIN_KICKED = 256;
 
@@ -336,16 +358,24 @@ window.Tetris = (function() {
 
 		setGame: function(game) {
 			this.game = game;
-			
-			$(document).addEvent('keydown',  this.handleKeyup.bind(this));
+			$(document).addEvent('keydown',  this._ = this.handleKeyup.bind(this));
+		},
+		
+		stopGame: function(game) {
+			this.game = false;
+			$(document).removeEvent('keydown',  this._);
+			dbg('keyboard hook detached');
 		},
 
 		handleKeyup: function(e) {
 			if(e.target.tagName.toLowerCase() != 'input') {
+				
 				var command = this.options.map[e.code];
 				if(command) {
 					this.game.handleCommand(command);
-					e.stop();
+
+					var evt = new Event(e).stop();
+
 				}
 			}
 		}
@@ -364,10 +394,15 @@ window.Tetris = (function() {
 			this.setOptions(options);
 		},
 
+		stopGame: function(game) {
+			this.game = false;
+			$(document).removeEventListener('click',  this._);
+		},
+
 		setGame: function(game) {
 			this.game = game;
 			var target = game.getContainer();
-			target.addEventListener('click', this.handleClick.bind(this), false);
+			target.addEventListener('click', this._ = this.handleKeyup.bind(this), false);
 		},
 
 		handleClick: function(e) {
@@ -391,9 +426,19 @@ window.Tetris = (function() {
 		setGame: function(game) {
 			this.game = game;
 			var target = game.getContainer();
-			target.addEventListener('touchstart', this);
-			target.addEventListener('touchmove', this);
-			target.addEventListener('touchend', this);
+			this._ = this.handleEvent.bind(this);
+			target.addEventListener('touchstart', this._);
+			target.addEventListener('touchmove', this._);
+			target.addEventListener('touchend', this._);
+		},
+
+
+		stopGame: function(game) {
+			var target = this.game.getContainer();
+			target.removeEventListener('touchstart', this._);
+			target.removeEventListener('touchmove', this._);
+			target.removeEventListener('touchend', this._);
+			target = this.game = false;
 		},
 
 		handleEvent: function(e) {
@@ -429,6 +474,10 @@ window.Tetris = (function() {
 			this.game.addEvent('newData', this.drawRemote.bind(this));
 		},
 		
+		stopGame: function() {
+
+		},
+
 		drawRemote: function(data) {
 			this.game.shape.points = data.shapePoints;
 			this.game.shape.data = data.shapeData;
@@ -673,7 +722,7 @@ window.Tetris = (function() {
 		check: function(min, max) {
 			var w = this.width;
 			if(!this.newLine) {
-				this.newLine =[];
+				this.newLine = new Array(w);
 				for(i=0;i<w;i++){ this.newLine[i]=0; } 
 			}
 			var removed = [];
@@ -692,8 +741,33 @@ window.Tetris = (function() {
 			if(removed.length > 0) {
 				this.fireEvent('linesRemoved', { removed: removed.length, lines:removed });
 			}
+			return(removed);
 
 		},
+
+
+		recursiveDrop: function() {
+			var row = 0;
+			var done = false;
+			var w = this.width;
+			var d = this.data;
+			while (!done)
+			{
+				done = true;
+				for(var i = this.total; i> -1; i -= w) {
+					for(var j=i; j > i - w; j--) {
+						if(d[j] == 0 && d[j - w] > 0) {
+							d[j] = d[j-w];
+							d[j-w] = 0;
+							done = false;
+						}
+					}
+					row++;
+				}
+			}
+			this.check(0, this.total);
+		},
+
 
 		fits: function(shape) {
 			var points = shape.getPoints();
@@ -1121,5 +1195,5 @@ window.Tetris = (function() {
 
 
 function dbg() {
-	if(window.console) console.debug(arguments);
+	if(window.console && console.log) console.log(arguments);
 }

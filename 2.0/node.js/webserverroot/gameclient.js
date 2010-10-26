@@ -14,6 +14,7 @@ var GameClient = new Class({
 		$('postMessage').addEvent('submit', this.postToChat.bind(this));
 		oldUnload = window.onbeforeunload;
 		window.unbeforeunload = function() { this.logout(); oldUnload(); }.bind(this);
+		
 	},
 
 	// execute publish an action to the server and init subCallback on subChannel on datareceive.
@@ -53,7 +54,7 @@ var GameClient = new Class({
 			$("pause").set('value', 'resume');
 		} else {
 			this.stopped = false;
-			this.player1.start();
+			this.player1.resume();
 			$("pause").set('value', 'pause');
 		}
 
@@ -218,12 +219,13 @@ var GameClient = new Class({
 			98: Tetris.MOVE_DOWN,
 			12: Tetris.DROP,
 			101: Tetris.DROP,
-			32: Tetris.DROP
+			32: Tetris.DROP,
+			80: Tetris.PAUSE
 		}
 		});
 
 
-		var renderer = Browser.name == 'ie' ? Tetris.TextRenderer : Tetris.CanvasRenderer;
+		var renderer = Browser.name == 'ie' ? Tetris.DivRenderer : Tetris.CanvasRenderer;
 		if(Browser.name == 'ie') {
 			new Element('p').addClass('ieFails').set('html', 'You have an inferior browser. Now bow to our ASCII Renderer!').injectInside(document.body).get('slide').hide().slideOut();
 		}
@@ -261,7 +263,7 @@ var GameClient = new Class({
 				ls.set('highscores', highscores);
 			}
 		}
-		if(confirm('Again?')) this.player1.reset();
+		if(confirm('Again?')) { this.player1.reset() } else { this.player1.stop(); }
 	},
 
 	showHighscores: function() {
@@ -269,17 +271,26 @@ var GameClient = new Class({
 		var highscores = ls.get('highscores');
 		dbg('hiscores found!', highscores);
 		if(highscores) {
-			var out = "\nRank\t\tPoints\t\tLevel\t\tUser\t\tTime\t\t\t\n";
+			var out = "<tr><th>"+['Rank','Points','Level','User','Time'].join("</th><th>")+"</th></tr>";
 			for(i=0; i<highscores.length; i++) {
-				out += "\t#"+(i +1)+"\t\t"+highscores[i].score+"\t\t"+highscores[i].level+"\t\t"+highscores[i].username+"\t\t"+new Date(highscores[i].timestamp).toString().split(' ').slice(0,5).join(' ')+'\n' ;
+				out += "<tr><td>"+["#"+(i +1),highscores[i].score,highscores[i].level,highscores[i].username,new Date(highscores[i].timestamp).toString().split(' ').slice(0,5).join(' ')].join("</td><td>") + "</td><tr>";
 			}
-			new Element('div').adopt(new Element('pre').set('html', out)).inject(document.body,  'top');
+			new Element('div', {id: 'highscores'}).adopt(
+				new Element('h4', {text: 'Local highscores'}),
+				new Element('table', {html: out}),
+				new Element('button', {text:'close', events: {'click': function() { $('highscores').dispose(); }}})
+				).inject(document.body,  'top');
 		}
 		else {
 			alert("No highscores yet! Go play!");
 		}
 	},
 
+	powerupTest: function() {
+
+		this.player1.model.recursiveDrop();
+
+	},
 
 
 	cleanupKicked: function(kicked) {
