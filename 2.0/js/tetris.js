@@ -634,11 +634,23 @@ var Tetris = (function() {
 		}
 	};
 
+	// addline
 	Tetris.Powerups.register('a', function(model) {
-		// addline
-		return Tetris.Powerups.run('c', model);
+		var data = model.data;
+		var w = model.width;
+		var insert = [];
+		var not = _floor(_random() * w);
+
+		for(var i=0; i<w; i++) {
+			insert[i] = (i == not)? 0 : 1 + _floor(_random() * 6);
+		}
+
+		data.push.apply(data, insert);
+		data.splice(0, w);
+		return data;
 	});
 
+	// clear line
 	Tetris.Powerups.register('c', function(model) {
 		var data = model.data;
 		var w = model.width;
@@ -651,46 +663,116 @@ var Tetris = (function() {
 		return data;
 	});
 
+	// nuke
 	Tetris.Powerups.register('n', function(model) {
 		var data = model.data;
-		// nuke
-		return Tetris.Powerups.run('c', model);
+		var l = model.total;
+		for(var i=0; i<l; i++) {
+			data[i] = 0;
+		}
+		return data;
 	});
 
+	// remove
 	Tetris.Powerups.register('r', function(model) {
 		var data = model.data;
-		// remove
-		return Tetris.Powerups.run('c', model);
+		var l = model.total
+		var indices = [];
+		for(var i=0; i<l; i++) {
+			if(data[i]) {
+				indices.push(i);
+			}
+		}
+		
+		l = indices.length;
+		for(var i=0; i<5; i++) {
+			var at = _floor(_random() * l);
+			data[indices[at]] = 0;
+		}
+		return data;
 	});
 
+	// do switch with another player ...		
 	Tetris.Powerups.register('s', function(model) {
 		var data = model.data;
-		// do switch
-		return Tetris.Powerups.run('c', model);
+		return data
 	});
 
+	// basic
 	Tetris.Powerups.register('b', function(model) {
 		var data = model.data;
-		// basic
-		return Tetris.Powerups.run('c', model);
+		var l = model.total;
+		var b = 1+ _floor(_random() * 6);
+		for(var i=0; i<l; i++) {
+			var n = data[i];
+			if(n && isNaN(n)) {
+				data[i] = b;
+			}
+		}
+		return data
 	});
 
+	// gravity
 	Tetris.Powerups.register('g', function(model) {
 		var data = model.data;
-		// gravity
-		return Tetris.Powerups.run('c', model);
+		var w = model.width;
+		var h = model.height;
+
+		var cols = [];
+		for(var i=w-1; i>=0; i--) {
+			cols[i] = [];
+			for(var d,n,j=h-1; j>=0; j--) {
+				d = (j * w) + i;
+				n = data[d];
+				if(n) {
+					cols[i].push(n);
+				}
+				data[d] = 0;
+			}
+		}
+
+		for(var i=0; i<w; i++) {
+			var col = cols[i];
+			var l = col.length;
+			for(var d,j=0; j<l; j++) {
+				d = (w * (h - j - 1)) + i;
+				data[d] = col[j];
+			}
+		}
+
+		return data;
 	});
 
+	// quake
 	Tetris.Powerups.register('q', function(model) {
 		var data = model.data;
-		// do quake
-		return Tetris.Powerups.run('c', model);
+		var l = model.total;
+		data.unshift(0,0,0,0,0);
+		data.length = l;
+		return data;
 	});
 
-	Tetris.Powerups.register('b', function(model) {
+	// bomb
+	Tetris.Powerups.register('o', function(model) {
 		var data = model.data;
-		// bomb
-		return Tetris.Powerups.run('c', model);
+		var l = model.total;
+
+		var a = [-11,-10, -9, -1, 1,9,10,11];
+		var b = [-13,-20,-17,-11,11,7,20,23];
+
+		for(var i=0; i<l; i++) {
+			if(data[i] == 'o') {
+				data[i] = 1;
+				for(var j=0; j<8; j++) {
+					var f = _max(0, _min(l-1, i + a[j]));
+					var t = _max(0, _min(l-1, i + b[j]));
+					data[t] = data[f];
+					data[f] = 0;
+				}
+			}
+		}
+
+		return data;
 	});
 
 
