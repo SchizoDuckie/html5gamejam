@@ -166,6 +166,14 @@ var Tetris = (function() {
 		heartbeat: function() {
 			var model = this.model;
 			var shape = this.shape;
+
+			if(this.checkQueued) {
+				this.checkQueued = false;
+				var cleared = model.check(0, model.total);
+				if(cleared.length) {
+					this.handlePowerups(cleared);
+				}
+			}
 			
 			if(model.fits(shape.movedBy(0,1))) {
 				shape.moveBy(0, 1);
@@ -203,7 +211,12 @@ var Tetris = (function() {
 				var data = this.powerups.run(power, model);
 				model.setData(data);
 				player.setModel(model);
+				player.queueCheck();
 			}
+		},
+
+		queueCheck: function() {
+			this.checkQueued = true;
 		},
 
 		update: function() {
@@ -327,8 +340,6 @@ var Tetris = (function() {
 			this.spriteHeight = this.canvas.height / model.height;
 			this.drawModel(model);
 		},
-
-
 		
 		drawShape: function(shape) {
 			var sw = this.spriteWidth;
