@@ -117,6 +117,7 @@ var Tetris = (function() {
 				case Tetris.ROTATE_RIGHT:	this.rotateShape(1);	break;				
 				case Tetris.DROP:			this.dropShape();		break;
 				case Tetris.POWERUP:		this.usePowerup();		break;
+				case Tetris.DELETE:			this.deletePowerup();	break;
 			}
 			this.update();
 		},
@@ -196,6 +197,8 @@ var Tetris = (function() {
 				this.powers.push(powers[i]);
 			}
 
+			this.powers.length = _min(10, this.powers.length);
+
 			l = cleared.length;
 			var powers = l / this.model.width;
 			for(var i=0; i<powers; i++) {
@@ -213,6 +216,10 @@ var Tetris = (function() {
 				player.setModel(model);
 				player.queueCheck();
 			}
+		},
+
+		deletePowerup: function() {
+			this.powers.shift();
 		},
 
 		queueCheck: function() {
@@ -243,6 +250,7 @@ var Tetris = (function() {
 	Tetris.MOVE_DOWN  = 5;
 	Tetris.DROP = 6;
 	Tetris.POWERUP = 7;
+	Tetris.DELETE = 8;
 
 
 
