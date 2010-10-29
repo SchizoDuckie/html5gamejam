@@ -3,19 +3,9 @@
  *
  */
 
-window.Tetris = (function() {
-
-	/**
-	 * Performance
-	 * 
-	 */
+var Tetris = (function() {
 	
-	// switched to a little more random seeding to not have a queue of the same blocks.
-	var seed= new Date().getTime();
-	var _random = function() {
-        seed = (new Date().getTime() + seed*9301+49297) % 233280;
-        return seed/(233280.0);
-	};
+	var _random = Math.random;
 	var _round = Math.round;
 	var _floor = Math.floor;
 	var _ceil = Math.ceil;
@@ -34,7 +24,7 @@ window.Tetris = (function() {
 	var Tetris = new Class({
 		Implements: [Events, Options],
 		lastCmd: false,
-
+		paused: false,
 		initialize: function(options) {
 			this.setOptions(options);
 		
@@ -43,15 +33,18 @@ window.Tetris = (function() {
 
 			this.factory = new Tetris.ShapeFactory(options);
 
+			this.powerups = options.powerups;
 			this.controller = options.controller;
-			
-	
-		
+			this.controller.setGame(this);
+
+			var Scoring = options.scoring || Tetris.Scoring;
+			this.scoring = new Scoring(this.options);
+			this.scoring.setGame(this);
+
 			this.reset();
 
 		},
 
-		// wall kicks need fixing. don't work.
 		// separate SRS kicks from state a to b as int. 0 is spawnstate, 1 right, 2 upside down, 3 left.
 		kicks: {
 			'0-1' : [[-1, 0], [-1,-1], [ 0, 2], [-1, 2]],
@@ -85,29 +78,35 @@ window.Tetris = (function() {
 		},
 
 		newShape: function() {
-			this.shape = this.factory.getShape();
-			
-			var x = _floor(this.model.width / 2);
-			this.shape.moveTo(x, 1);
+			if(this.gameover) {
+				return;
+			} else {
+				this.shape = this.factory.nextShape();
+				var x = _floor(this.model.width / 2);
+				this.shape.moveTo(x, 1);
 
-			if(!this.model.fits(this.shape)) {
-				this.stop();
-				this.fireEvent('gameover');
-				return false;
+				if(!this.model.fits(this.shape)) {
+					this.stop();
+					this.fireEvent('gameover');
+					return false;
+					
+				}
 			}
 			return true;
 		},
 
 		reset: function() {
 			this.setModel(new Tetris.Model(this.options));	
-			this.scoring = new Tetris.Scoring(this.options);
-			this.factory.newGame(this);
+			this.powers = [];
+			this.gameover = false;
+			this.factory.reset();
+			this.scoring.reset();
 			this.scoring.setGame(this);
 			this.start();
+		
 		},
 
-		start: function() {
-			this.controller.setGame(this);
+		start: function() {	
 			this.newShape();
 			this.heartbeat();
 		},
@@ -123,9 +122,10 @@ window.Tetris = (function() {
 		},
 
 		stop: function(dontReset) {
-			this.controller.stopGame();
+			this.gameover = true;
 			clearTimeout(this.timer);
 			this.timer = false;
+			this.controller.stopGame();
 		},
 
 		remove: function() {
@@ -199,37 +199,68 @@ window.Tetris = (function() {
 				shape.moveBy(0,1);
 				dropped++;
 			}
-			return dropped;
+			return {dropped:dropped};
 		},
 
-		heartbeat: function() {
+		heartbeat: function() { 
 			var model = this.model;
 			var shape = this.shape;
 			
 			if(model.fits(shape.movedBy(0,1))) {
 				shape.moveBy(0, 1);
 			} else {
-				model.put(shape);
-				if (!this.newShape()) {
-					return this.stop();	
-				} else {
-					this.fireEvent('heartbeat', {model: model.data, shapePoints: this.shape.getPoints(), shapeData: this.shape.getData(), score:this.scoring.getScore()}); 
-				}
+				var cleared = model.put(shape);
+				if(cleared.length) {
+					this.handlePowerups(cleared);
+				}				
+				this.fireEvent('heartbeat', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData(), score: this.scoring.getScore()}); 
+				this.newShape();
+
 			}
-			this.update();
-			this.timer = setTimeout(this.heartbeat.bind(this), 1000 - (this.scoring.getLevel() * 50));
+			if(!this.gameover) {
+				this.timer = setTimeout(this.heartbeat.bind(this), 1000 - (this.scoring.getLevel() * 50));
+			} 
+			this.update();		
+		},
+
+		handlePowerups:function(cleared) {
+			var powers = this.powerups.getPowerups(cleared);
+			l = powers.length;
+			for(var i=0; i<l; i++) {
+				this.powers.push(powers[i]);
+			}
+
+			l = cleared.length;
+			var powers = l / this.model.width;
+			for(var i=0; i<powers; i++) {
+				this.powerups.addPowerup(this.model);
+			}
+		},
+
+		usePowerup: function(target) {
+			var player = target || this;
+			var power = this.powers.shift();
+			if(power) {
+				var model = player.getModel();
+				var data = this.powerups.run(power, model);
+				model.setData(data);
+				player.setModel(model);
+			}
 		},
 
 		update: function() {
 			var model = this.model;
 			var shape = this.shape;
+			var queue = this.factory.getQueue();
+			var powers = this.powers;
 			var ghost;
 
 			ghost = shape.clone(this.state);
 			while(model.fits(ghost.movedBy(0,1))) {
 				ghost.moveBy(0,1);
 			}
-			this.renderer.draw(model, shape, ghost);
+
+			this.renderer.draw(model, shape, ghost, queue, powers);
 		}
 	});
 
@@ -239,7 +270,6 @@ window.Tetris = (function() {
 		score: 0,
 		lines: 0,
 		lastCommand: 0,
-
 
 		rules: {
 			32: [0, 100, 300, 500, 800, 1000], // Normal line removed.
@@ -251,26 +281,27 @@ window.Tetris = (function() {
 		initialize: function(options) {
 
 			this.setOptions(options);
-
-			this.container = $(options.target).getFirst('.scores') || new Element('div', {'class': 'scores'}).inject(options.target,'top');
+			this.container = $(options.target).getFirst('.details');
 			this.draw();
 		},
 
 		setGame:function(game) {
-			this.score =  this.lines = this.lastCommand = 0;
-			this.level = 1;
-			game.model.addEvents({
-								'linesRemoved': this.linesRemoved.bind(this),
-								'tSpin':		this.tSpin.bind(this)
-			});
-			game.addEvents({'drop':		this.drop.bind(this),
-							'softDrop': this.softDrop.bind(this)
-			});
-			game.model.addEvent('linesRemoved', game.factory.addPowerups.bind(game.factory));
-			this.draw();
+			if(game.model) { 
+				game.model.addEvents({
+					'linesCleared': this.linesCleared.bind(this)
+				});
+				game.addEvents({
+					'drop':		this.drop.bind(this),
+					'softDrop': this.softDrop.bind(this)
+				});
+			}
 		},
 
-
+		reset: function() {
+			this.score =  this.lines = this.lastCommand = 0;
+			this.level = 1;
+			this.draw();
+		},
 
 		getLevel: function() {
 			return this.level;
@@ -287,7 +318,7 @@ window.Tetris = (function() {
 			this.draw();
 		},
 
-		linesRemoved: function(lines){
+		linesCleared: function(lines){
 			var points = 0, lc = this.lastCommand;
 			this.lines += lines.removed;
 			//dbg("Lines removed, last command was: ", lc, Tetris.T_SPIN);
@@ -305,6 +336,7 @@ window.Tetris = (function() {
 
 		// needs to be called after consecutive soft drops.
 		softDrop: function() {
+			dbg('softdrop', this.lastCommand);
 			if(this.lastCommand= Tetris.MOVE_DOWN) {
 				this.score++;
 				this.draw();
@@ -313,22 +345,55 @@ window.Tetris = (function() {
 
 		// full drop rewards 2 points per dropped line
 		drop: function(lines) {
-			this.score += 2 * lines;
+			dbg('drop: ', lines);
+			this.score += 2 * lines.dropped;
 			this.draw();
-		},
-
-		tSpin: function(points) {
-		//	alert('T-Spin detection!! bonus points ' + points);
 		},
 		
 
 		draw: function() {
-			this.container.set('html', '<b>Level:'+this.level+'</b><p>Score: '+this.score+'</p><small>Lines: '+this.lines+'</small>');
+			if(!this._s) this._s = this.container.getFirst('.score');
+			if(!this._l) this._l = this.container.getFirst('.lines');
+			if(!this._lv) this._lv = this.container.getFirst('.level')
+			this._l.set('html', this.lines);
+			this._lv.set('html', this.level);
+			this._s.set('html', this.score);
+		}
+	});
+
+	Tetris.Scoring.Remote = new Class({
+		Extends: Tetris.Scoring,
+		Implements: [Options, Events],
+		initialize: function(options) {
+			this.username = '';
+			this.setOptions(options);
+			this.container = $(options.target).getFirst('h2').empty();
+			this.draw();
+		},
+
+		getScore: function() {
+			return { level: this.level, score:this.score, lines: this.lines};
+		}, 
+
+		setGame: function() {},
+
+		setScore: function(s, username) {
+			this.level = s.level;
+			this.score = s.score;
+			this.lines = s.lines;
+			this.username =  username;
+			this.draw();
+		},
+
+
+		draw: function() {
+			if(!this.marquee) {
+				this.marquee = new Element('marquee').injectInside(this.container);
+			}
+			this.marquee.set('html', this.username+'- Level: '+this.level+' Score: ' + this.score,' Lines: '+this.lines);
 		}
 
-		
-
-	});
+	})
 
 
 	Tetris.ROTATE_LEFT = 1;
@@ -338,6 +403,7 @@ window.Tetris = (function() {
 	Tetris.MOVE_DOWN  = 5;
 	Tetris.DROP = 6;
 	Tetris.LINE_REMOVED = 7;
+	Tetris.POWERUP = 10;
 	Tetris.PAUSE = 8;
 	Tetris.T_SPIN = 128;
 	Tetris.T_SPIN_KICKED = 256;
@@ -362,9 +428,8 @@ window.Tetris = (function() {
 		},
 		
 		stopGame: function(game) {
-			this.game = false;
-			$(document).removeEvent('keydown',  this._);
-			dbg('keyboard hook detached');
+			//$(document).removeEvent('keydown',  this._);
+			//dbg('keyboard hook detached');
 		},
 
 		handleKeyup: function(e) {
@@ -373,9 +438,7 @@ window.Tetris = (function() {
 				var command = this.options.map[e.code];
 				if(command) {
 					this.game.handleCommand(command);
-
-					var evt = new Event(e).stop();
-
+						e.stop();
 				}
 			}
 		}
@@ -395,7 +458,6 @@ window.Tetris = (function() {
 		},
 
 		stopGame: function(game) {
-			this.game = false;
 			$(document).removeEventListener('click',  this._);
 		},
 
@@ -438,7 +500,6 @@ window.Tetris = (function() {
 			target.removeEventListener('touchstart', this._);
 			target.removeEventListener('touchmove', this._);
 			target.removeEventListener('touchend', this._);
-			target = this.game = false;
 		},
 
 		handleEvent: function(e) {
@@ -457,18 +518,20 @@ window.Tetris = (function() {
 
 		initialize: function(options) {
 			this.setOptions(options);
+			
+		},
+
+		setUserName: function(username) {
+			this.username = username;
 		},
 
 		setGame: function(game) {
 			this.game = game;
-			this.game.stop = function() {
-				
-			}	
+			this.game.stop = function() { }	
 			this.game.renderer.drawShape = this.drawShape.bind(game.renderer);
 			this.game.renderer.draw = this.draw.bind(game.renderer);
 			this.game.factory.showPreview = function() {};
-			$(this.game.factory.queueDiv).dispose();
-
+		
 			game.stop();
 			game.heartbeat = function() {};
 			this.game.addEvent('newData', this.drawRemote.bind(this));
@@ -478,11 +541,13 @@ window.Tetris = (function() {
 
 		},
 
+
 		drawRemote: function(data) {
+			if(!this.game.shape) this.game.shape = {};
 			this.game.shape.points = data.shapePoints;
 			this.game.shape.data = data.shapeData;
 			this.game.model.data = RLE.decode(data.model);
-			if(data.score) this.game.scoring.setScore(data.score);
+			if(data.score) this.game.scoring.setScore(data.score, data.username);
 			this.game.renderer.draw(this.game.model, this.game.shape, this.game.shape);
 
 		},
@@ -535,65 +600,32 @@ window.Tetris = (function() {
 			[[-1,-1],[0,-1],[0,0], [1,0]]	// Z
 		],
 			
-		queue: [],
-		renderers: [],
-			
 		initialize: function(options) {
 			this.setOptions(options);
-			this.getShapes(5);
-			
-			this.queueDiv= options.target.appendChild(
-				document.createElement('div')
-			);
-			this.queueDiv.innerHTML ='<h2>Queue:</h2>';
-			this.queueDiv.className = 'shapequeue';
-			var Renderer = options.renderer;
-			this.model = new Tetris.Model({cols: 4, rows: 3});
-			this.renderers = [
-				new Renderer({ target:this.queueDiv, width: 50, height:40, cols: 4, rows: 3 }),
-				new Renderer({ target:this.queueDiv, width: 50, height:40, cols: 4, rows: 3 }),
-				new Renderer({ target:this.queueDiv, width: 50, height:40, cols: 4, rows: 3 })
-				];
+			this.reset();
 		},
 
-		// for each line removed, a powerup could possibly be granted.
-		addPowerups: function(lines) {
-			dbg("addPowerups", lines);
-			for(i=0; i<lines.removed;i++) {
-				dbg('add powerup? ', _ceil(_random() * i));
-			}
-		},
-
-		getShapes: function(n) {
-			for(i=0;i<n;i++) {
-				this.queue.push(this.newShape());
-			}
-		},
-
-		newGame: function() {
+		reset: function() {
 			this.queue = [];
-			this.getShapes(5);
+			var l = this.options.queue;
+			for(var i=0; i<l; i++) {
+				this.queue.push(this.getShape());
+			}
 		},
 
-		newShape: function(n) {
+		getQueue: function() {
+			return this.queue;
+		},
+
+		getShape: function(n) {
 			var l = this.shapes.length;
 			var r = n || _floor(_random() * l);
 			return new Tetris.Shape(this.shapes[r], r + 1);
 		},
 
-		showPreview: function() {
-			for(i=0;i<this.renderers.length; i++) {
-				this.renderers[i].draw(this.model, this.queue[1+i].moveTo(2,2));
-			}
-			return(this.queue[1]);
-		},
-
-
-		getShape: function(n) {
-			this.getShapes(1);
-			this.showPreview();
+		nextShape: function() {
+			this.queue.push(this.getShape());
 			return this.queue.shift();
-
 		}
 	});
 
@@ -697,6 +729,17 @@ window.Tetris = (function() {
 			for(i=0; i<this.total;i++) { this.data[i] = 0; }
 		},
 
+		getData: function() {
+			return this.data;
+		},
+
+		setData: function(data) {
+			if(data.length === this.total) {
+				this.data = data;	
+			} else {
+				throw Error('Data size differs from current size');
+			}
+		},
 		put: function(shape) {
 			var points = shape.getPoints();
 			var data = shape.getData();
@@ -721,11 +764,15 @@ window.Tetris = (function() {
 
 		check: function(min, max) {
 			var w = this.width;
+			var cleared = [];
+
 			if(!this.newLine) {
-				this.newLine = new Array(w);
-				for(i=0;i<w;i++){ this.newLine[i]=0; } 
+				this.newLine = [];
+				for(i=0; i<w; i++){ 
+					this.newLine[i] = 0; 
+				} 
 			}
-			var removed = [];
+
 			for(var i=min; i<max; i++) {
 				if(!this.data[i]) {
 					i = (i + w) - (i % w) -1;
@@ -734,14 +781,14 @@ window.Tetris = (function() {
 
 				if((i + 1) % w == 0) {
 					var at = i - w + 1;
-					removed.push(this.data.splice(at, w));
+					cleared = cleared.concat(this.data.splice(at, w));
 					this.data.unshift.apply(this.data, this.newLine);
 				}
 			}
-			if(removed.length > 0) {
-				this.fireEvent('linesRemoved', { removed: removed.length, lines:removed });
+			if(cleared.length > 0) {
+				this.fireEvent('linesCleared', { removed: cleared.length / this.width, lines:cleared});
 			}
-			return(removed);
+			return cleared;
 
 		},
 
@@ -816,6 +863,208 @@ window.Tetris = (function() {
 	});
 
 
+
+	/**
+	 * Powerups
+	 * 
+	 */
+
+	Tetris.Powerups = {
+		types: {},
+		data: [],
+
+		register: function(type, filter) {
+			this.types[type] = filter;
+			this.data.push(type);
+			this.powerreg = new RegExp('[' + this.data.join('') + ']','mg');
+		},
+
+		random: function() {
+			var l = this.data.length;
+			var i = _floor(_random() * l);
+			return this.data[i];
+		},
+
+		getPowerups: function(data) {
+			var powers = [];
+			var s = data.join('');
+			s.replace(this.powerreg, function(p) {
+				powers.push(p);
+			});
+			return powers;
+		},
+
+		addPowerup: function(model) {
+			var power = this.random();
+			var data = model.getData();
+			var indices = [];
+			var l = data.length;
+			for(var i=0; i<l; i++) {
+				if(data[i]) {
+					indices.push(i);
+				}	
+			}
+
+			var random = _floor(_random() * indices.length);
+			var index = indices[random];
+			if(index) {
+				data[index] = power;
+			}
+		},
+
+		run: function(type, model) {
+			var filter = this.types[type];
+			if(filter) {
+				return filter(model);
+			}
+
+			return data;
+		}
+	};
+
+	// addline
+	Tetris.Powerups.register('a', function(model) {
+		var data = model.data;
+		var w = model.width;
+		var insert = [];
+		var not = _floor(_random() * w);
+
+		for(var i=0; i<w; i++) {
+			insert[i] = (i == not)? 0 : 1 + _floor(_random() * 6);
+		}
+
+		data.push.apply(data, insert);
+		data.splice(0, w);
+		return data;
+	});
+
+	// clear line
+	Tetris.Powerups.register('c', function(model) {
+		var data = model.data;
+		var w = model.width;
+		var i = model.total - w;
+		var out = data.splice(i, w);
+		for(var i=0; i<w; i++) {
+			out[i] = 0;
+		}
+		data.unshift.apply(data, out);
+		return data;
+	});
+
+	// nuke
+	Tetris.Powerups.register('n', function(model) {
+		var data = model.data;
+		var l = model.total;
+		for(var i=0; i<l; i++) {
+			data[i] = 0;
+		}
+		return data;
+	});
+
+	// remove
+	Tetris.Powerups.register('r', function(model) {
+		var data = model.data;
+		var l = model.total
+		var indices = [];
+		for(var i=0; i<l; i++) {
+			if(data[i]) {
+				indices.push(i);
+			}
+		}
+		
+		l = indices.length;
+		for(var i=0; i<5; i++) {
+			var at = _floor(_random() * l);
+			data[indices[at]] = 0;
+		}
+		return data;
+	});
+
+	// do switch with another player ...		
+	Tetris.Powerups.register('s', function(model) {
+		var data = model.data;
+		return data
+	});
+
+	// basic
+	Tetris.Powerups.register('b', function(model) {
+		var data = model.data;
+		var l = model.total;
+		var b = 1+ _floor(_random() * 6);
+		for(var i=0; i<l; i++) {
+			var n = data[i];
+			if(n && isNaN(n)) {
+				data[i] = b;
+			}
+		}
+		return data
+	});
+
+	// gravity
+	Tetris.Powerups.register('g', function(model) {
+		var data = model.data;
+		var w = model.width;
+		var h = model.height;
+
+		var cols = [];
+		for(var i=w-1; i>=0; i--) {
+			cols[i] = [];
+			for(var d,n,j=h-1; j>=0; j--) {
+				d = (j * w) + i;
+				n = data[d];
+				if(n) {
+					cols[i].push(n);
+				}
+				data[d] = 0;
+			}
+		}
+
+		for(var i=0; i<w; i++) {
+			var col = cols[i];
+			var l = col.length;
+			for(var d,j=0; j<l; j++) {
+				d = (w * (h - j - 1)) + i;
+				data[d] = col[j];
+			}
+		}
+
+		return data;
+	});
+
+	// quake
+	Tetris.Powerups.register('q', function(model) {
+		var data = model.data;
+		var l = model.total;
+		data.unshift(0,0,0,0,0);
+		data.length = l;
+		return data;
+	});
+
+	// bomb
+	Tetris.Powerups.register('o', function(model) {
+		var data = model.data;
+		var l = model.total;
+
+		var a = [-11,-10, -9, -1, 1,9,10,11];
+		var b = [-13,-20,-17,-11,11,7,20,23];
+
+		for(var i=0; i<l; i++) {
+			if(data[i] == 'o') {
+				data[i] = 1;
+				for(var j=0; j<8; j++) {
+					var f = _max(0, _min(l-1, i + a[j]));
+					var t = _max(0, _min(l-1, i + b[j]));
+					data[t] = data[f];
+					data[f] = 0;
+				}
+			}
+		}
+
+		return data;
+	});
+
+
+
 	/**
 	 * Renderer(s)
 	 * 
@@ -823,31 +1072,22 @@ window.Tetris = (function() {
 	Tetris.CanvasRenderer = new Class({
 		Implements: [Events, Options],
 
-		colors: [
-			null,
-			'#00f0f0',
-			'#0000f0',
-			'#f0a000',
-			'#f0f000',
-			'#00f000',
-			'#a000f0',
-			'#f00000'
-		],
-
 		initialize: function(options) {
 			this.setOptions(options);
-			this.canvas = options.target.appendChild(
+			this.canvas = options.target.getFirst('.game').set('html','').appendChild(
 				document.createElement('canvas')
 			);
+			if(options.powers) {
+				this.powerups = options.powers.set('html','').appendChild(
+					document.createElement('canvas')
+				)
+			}
+
 			this.resizeTo(options.width, options.height);
-			this.image = new Image();
-			this.image.src = 'sprite.png';
-			this.image.width = 30;
-			this.image.height = 270;
 
-			this.prerender();
-
-			
+			this.sprite = new Image();
+			this.sprite.onload = this.prerender.bind(this);
+			this.sprite.src = './sprite.png';
 		},
 
 		// interface requirement, must return the root node of the particular renderer
@@ -857,67 +1097,45 @@ window.Tetris = (function() {
 
 		prerender: function() {
 			this.sprites = [];
-			var l = this.colors.length;
 
-			var opt = this.options;
+			var shapes = [1,2,3,4,5,6,7]
+			var powers = 'acnrsgbqo'.split('');
 
-			var sw = opt.width / opt.cols;
-			var sh = opt.height / opt.rows;
-			
-			var color, canvas, ctx;
+			this.renderSprites(shapes, -75, 0);
+			this.renderSprites(powers, 0, 0);
+		},
+
+		renderSprites: function(data, dx, dy) {
+			var l = data.length;
+			var x = dx;
+			var y = dy;
 			for(var i=0; i<l; i++) {
-				color = this.colors[i];
-				if(color) {
-					canvas = document.createElement('canvas');
-					canvas.width = sw;
-					canvas.height = sh;
-					
-					ctx = canvas.getContext('2d');
-					// prep for powerups
-					ctx.moveTo(0, 0)
-					ctx.drawImage(this.image, 0, (i -1) * 30, 30, 30, 0, 0, sw, sh);
-
-					/*
-					// color fill
-					ctx.fillStyle = color;
-					ctx.fillRect(0, 0, sw, sh);
-					ctx.lineWidth = sw / 5;
-					
-					// light bevel
-					ctx.globalAlpha = 0.75;
-					ctx.beginPath();
-					ctx.strokeStyle = '#ffffff';
-					ctx.moveTo(0, sh);
-					ctx.lineTo(0, 0);
-					ctx.lineTo(sw, 0);
-					ctx.stroke();
-					
-					// shaded bevel
-					ctx.globalAlpha = 0.25;
-					ctx.beginPath();
-					ctx.strokeStyle = '#000000';
-					ctx.moveTo(sw, 0);
-					ctx.lineTo(sw, sh);
-					ctx.lineTo(0, sh);
-					ctx.stroke();
-					*/
-					this.sprites[i] = canvas;
-				}
+				var canvas = document.createElement('canvas');
+				canvas.width = 25;
+				canvas.height = 25;
+				var ctx = canvas.getContext('2d');
+				ctx.drawImage(this.sprite, x, y);
+				y -= 25;
+				this.sprites[data[i]] = canvas;
 			}
 		},
 
 		getSprite: function(data) {
+			if(!this.sprites) this.prerender();
 			return this.sprites[data];
 		},
 
-		draw: function(model, shape, ghost) {
+		draw: function(model, shape, ghost, queue, powers) {
 			this.model = model;
 			this.spriteWidth = this.canvas.width / model.width;
 			this.spriteHeight = this.canvas.height / model.height;
 
 			this.drawModel(model);
-			if(ghost)this.drawGhost(ghost);
 			this.drawShape(shape);
+			this.drawQueue(queue);
+
+			ghost && this.drawGhost(ghost);
+			powers && this.powerups && this.drawPowers(powers);
 		},
 
 
@@ -930,14 +1148,17 @@ window.Tetris = (function() {
 			var ctx = this.context;
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			
+			ctx.shadowOffsetX = 3;
+			ctx.shadowOffsetY = 3;
+			ctx.shadowBlur = 3;
+			ctx.shadowColor = 'rgba(0,0,0,0.25)';
 			var l = model.total;
 			for(var x, y, d, sprite, i=0; i<l; i++) {
 				x = (i % c) * sw;
 				y = _floor(i / c) * sh;
 				d = model.data[i];
-				
-				sprite = this.getSprite(d);
-				if(sprite) {
+				if(d) {
+					sprite = this.getSprite(d);
 					ctx.drawImage(sprite, x, y, sw, sh);
 				}
 			}
@@ -972,11 +1193,36 @@ window.Tetris = (function() {
 			ctx.restore();
 		},
 
+		drawPowers: function(powers) {
+			var sw = this.spriteWidth;
+			var sh = this.spriteHeight;
+			
+			this.pctx.clearRect(0,0, this.options.width, sh);
+
+			var x = 0;
+			var l = powers.length;
+			for(var i=0; i<l; i++) {
+				var sprite = this.getSprite(powers[i]);
+				this.pctx.drawImage(sprite, x, 0, sw, sh);
+				x += sw;
+			}
+		},
+
+		drawQueue: function(queue) {
+			var next = queue[0];
+			// todo
+		},
 		resizeTo: function(w, h) {
 			var canvas = this.canvas;
 			canvas.width = w;
 			canvas.height = h;
 			this.context = canvas.getContext('2d');
+			if(this.powerups) {
+				var powers = this.powerups;
+				powers.width = w;
+				powers.height = h / this.options.rows;
+				this.pctx = powers.getContext('2d');
+			}
 		}
 	});
 
