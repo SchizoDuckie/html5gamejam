@@ -832,7 +832,7 @@ var Tetris = (function() {
 			var shapes = [1,2,3,4,5,6,7]
 			var powers = 'acnrsgbqo'.split('');
 
-			this.renderSprites(shapes, -25, 0);
+			this.renderSprites(shapes, -75, 0);
 			this.renderSprites(powers, 0, 0);
 		},
 
