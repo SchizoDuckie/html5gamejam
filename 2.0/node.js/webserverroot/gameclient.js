@@ -5,9 +5,7 @@ var GameClient = new Class({
 
 	initialize: function( options) {
 		this.setOptions(options);
-		$('game').get('slide').hide();
-		$('onlinewrap').get('slide').hide();
-		$('gamestatus').get('slide').hide();
+
 		$('username').focus();
 		$('loginbutton').removeProperty('disabled');
 		$(this.options.loginform).addEvent('submit', this.login.bind(this));
@@ -93,16 +91,8 @@ var GameClient = new Class({
 	},
 
 	showMessage: function(msg) {
-		if(!slider) {
-			var status = $('gamestatus');
-			var slider = status.set('slide',{ link: 'chain' }).get('slide');
-			slider.hide();
-
-		}
 		if(msg) {
-			slider.slideIn();
-			status.set('html', msg.message || msg);
-			slider.wait(3500).slideOut();
+			$('gamestatus').set('html', msg.message || msg);
 		}
 	},
 
@@ -132,14 +122,9 @@ var GameClient = new Class({
 	   if(message.message) {
 			this.showMessage(message.message)
 	   }	
- 	   $('online').set('html', '');
-		Hash.each(message.users, function(user, data) {
-			 new Element('li').set('html', user.username+'<small>('+user.browser[0]+' v'+user.browser[1]+")</small>").injectInside($('online'));
-		});
-
 		if(message.kicked) {
 			Hash.each(message.kicked, function(user) {
-				$(this.mockGames[user].renderer.getContainer()).getParent().destroy();
+				$(this.mockGames[this.users[user]].renderer.getContainer()).getParent().destroy();
 				this.mockGames[user] = null;
 				delete this.mockGames[user];
 			}, this);
@@ -149,22 +134,28 @@ var GameClient = new Class({
 	handleMockGames: function(games) {
 		Hash.each(games, function(game, username) {
 			var user = username;
+			
 			if(games[username].username && user != this.username) {
-				if(!this.mockGames[user]) {
+				if(!this.users[user]) {
 					try
 					{
 						var el;
 						var remote = new Tetris.Remote();
-						$("mocks").adopt(el = new Element('div', { html: '<strong>'+user+'</strong>' }));
-						this.mockGames[user] = new Tetris({
+						this.users[user] = this.mockGames.length;
+						el = $('player'+(this.users[user]+2));
+						this.mockGames.push(new Tetris({
 							target: el,
 							renderer:	Tetris.CanvasRenderer,
 							controller: remote,
-							cols: 11,
-							rows: 15,
-							width: 110,
-							height: 150
-						});
+							scoring: Tetris.Scoring.Remote,
+							powerups: Tetris.Powerups,
+							cols: 10,
+							rows: 20,
+							width: 120,
+							height: 240
+						}));
+						remote.setUserName(user);
+						
 
 					}
 					catch (E)
@@ -172,19 +163,17 @@ var GameClient = new Class({
 						debugger;
 					}
 				} else {
-
 					try
 					{
 					// pass the new data to the game. It registered the newData event.
-						this.mockGames[user].fireEvent('newData', game);						
+						game.username= user;
+						this.mockGames[this.users[user]].fireEvent('newData', game);						
 					}
 					catch (E)
 					{
 						dbg(E);
 					}
-
 				}
-
 			}
 		}, this);
 	},
@@ -197,57 +186,69 @@ var GameClient = new Class({
 	},
 
 	startGame: function() {
-
-		$('loginForm').get('slide').slideOut();
-		$('onlinewrap').get('slide').slideIn();
-		$('game').get('slide').slideIn();
-
+		try
+		{
+			
+		$(this.options.gameui).hide();
 		var arrowKeys = new Tetris.Keyboard({ 
-		map:{ 
-			65: Tetris.ROTATE_LEFT,
-			103 : Tetris.ROTATE_LEFT,
-			36: Tetris.ROTATE_LEFT,
-			33: Tetris.ROTATE_RIGHT,
-			38: Tetris.ROTATE_RIGHT,
-			104: Tetris.ROTATE_RIGHT,
-			83: Tetris.ROTATE_RIGHT,
-			37: Tetris.MOVE_LEFT, 
-			100: Tetris.MOVE_LEFT, 
-			39: Tetris.MOVE_RIGHT,
-			102: Tetris.MOVE_RIGHT,
-			40: Tetris.MOVE_DOWN,
-			98: Tetris.MOVE_DOWN,
-			12: Tetris.DROP,
-			101: Tetris.DROP,
-			32: Tetris.DROP,
-			80: Tetris.PAUSE
-		}
+			map:{ 
+				65: Tetris.ROTATE_LEFT,
+				103 : Tetris.ROTATE_LEFT,
+				36: Tetris.ROTATE_LEFT,
+				33: Tetris.ROTATE_RIGHT,
+				38: Tetris.ROTATE_RIGHT,
+				104: Tetris.ROTATE_RIGHT,
+				83: Tetris.ROTATE_RIGHT,
+				
+				37: Tetris.MOVE_LEFT, 
+				100: Tetris.MOVE_LEFT, 
+				39: Tetris.MOVE_RIGHT,
+				102: Tetris.MOVE_RIGHT,
+				40: Tetris.MOVE_DOWN,
+				98: Tetris.MOVE_DOWN,
+				
+				12: Tetris.DROP,
+				101: Tetris.DROP,
+				32: Tetris.DROP,
+
+				49: Tetris.POWERUP
+			}
 		});
 
 
 		var renderer = Browser.name == 'ie' ? Tetris.DivRenderer : Tetris.CanvasRenderer;
 		if(Browser.name == 'ie') {
-			new Element('p').addClass('ieFails').set('html', 'You have an inferior browser. Now bow to our ASCII Renderer!').injectInside(document.body).get('slide').hide().slideOut();
+			new Element('p').addClass('ieFails').set('html', 'You have an inferior browser. Now bow to our HTML Renderer!').injectInside(document.body);
 		}
-		var mouse = new Tetris.Mouse();
+	
 		this.player1 = new Tetris({
-			target: $('game'),
-			renderer:renderer,
+			target: $('player1'),
+			powers: $('player1').getFirst('.powerups'),
+			renderer: Tetris.CanvasRenderer,
 			controller: arrowKeys,
-			cols: 11,
-			rows: 15,
-			width: 220,
-			height: 300
+			powerups: Tetris.Powerups,
+			queue: 5,
+			cols: 10,
+			rows: 20,
+			width: 250,
+			height: 500
 		});
-
+		$('player1').getFirst('h1').set('html', this.username);
+			
 		this.player1.addEvent('heartbeat', this.publishGameState.bind(this));
 		this.player1.addEvent('gameover', this.highScoreCheck.bind(this));
-		this.mockGames = {};
+		this.mockGames = [];
+		this.users = [];
 
 		this.pubSub('/game/chat', { username:this.username, message: 'Just entered the game room' }, '/game/chat', this.handleChat);
 		this.pubSub('/game/getuserlist', { username: this.username }, '/game/userlist', this.handleOnlineUsers.bind(this));
 		this.pubSub('/game/savestate/'+this.username, {username: this.username, timestamp: new Date().getTime()}, '/game/states', this.handleMockGames.bind(this));
-
+	
+		}
+		catch (e)
+		{
+			dbg(e);
+		}
 	},
 
 	highScoreCheck: function() {
@@ -263,7 +264,7 @@ var GameClient = new Class({
 				ls.set('highscores', highscores);
 			}
 		}
-		if(confirm('Again?')) { this.player1.reset() } else { this.player1.stop(); }
+		if(confirm('Again?')) { this.player1.reset() }
 	},
 
 	showHighscores: function() {
@@ -316,7 +317,7 @@ var GameClient = new Class({
 
 /* custom rle encoder that maps our digits to aplphanum chars to make RLE encoding possible. */
 var RLE = new Class({
-	numberMappings: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+	numberMappings: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
 	
 	encode:function(input) {
 		var encoding = "", 
@@ -324,7 +325,7 @@ var RLE = new Class({
 			m= input.match(enc);
 
 		for(i=0;i<m.length;i++) {
-			encoding += m[i].length + this.numberMappings[m[i][0]];
+			encoding += m[i].length + (this.numberMappings[m[i][0]] || m[i][0]);
 		}
 		return encoding;
 	},
@@ -333,6 +334,7 @@ var RLE = new Class({
 		var output = "";
 		var s = encoded.split(/([A-Z])/);
 		for(i=0; i<s.length -1; i+=2) {
+			
 			output += new Array(1 + parseInt(s[i])).join(this.numberMappings.indexOf(s[i+1]));
 		} 
 		output = output.split('');

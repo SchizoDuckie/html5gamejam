@@ -29,7 +29,7 @@ var server = http.createServer(function(request, response) {
 });
 server.listen(Number(port))
 
-commChannel = new faye.NodeAdapter({mount: '/tetrisdemo', timeout: 500});		
+commChannel = new faye.NodeAdapter({mount: '/tetsyourself', timeout: 500});		
 commChannel.attach(server);
 
 FayeClient = commChannel.getClient();
@@ -60,7 +60,7 @@ GameMaster = new Class({
 				switch(channel[1]) {
 					case 'canihazlogin':
 						cli.move(3,4).clearLine().write("User wants to login: "+message.data.username);
-						if(message.data.username && !this.users[message.data.username]) 
+						if(message.data.username) 
 							{
 								this.users[message.data.username] = {
 									username: message.data.username,
@@ -214,13 +214,24 @@ CliRenderer = new Class({
 					'\x1B[0;35;35m☺\x1B[0;0m',
 					'\x1B[0;31;31m░\x1B[0;0m'
 		],
+		this.powerups = { a: 'a',
+						  c: 'c',
+					      n: 'n',
+						  r: 'r',
+						  s: 's', 
+						  b: 'b',
+						  g: 'g',
+						  q: 'q',
+						  o: 'o'
+		};
+
 		this.draw(shape,data);
 	},
 
 	draw: function(points, data) {
 
 		var insert = [];
-		var c = 11;
+		var c = 10;
 		var l = points.length;
 
 		for(var p,i=0; i<l; i++) {
@@ -230,7 +241,7 @@ CliRenderer = new Class({
 		}
 
 		var out = [];
-		var l = 165;
+		var l = 200;
 		for(var i=0; i<l; i++) {
 			var chara = this.getChar(insert[i] || data[i] || 0);
 			out[i] = this.getChar(data[i] || 0);
@@ -243,29 +254,31 @@ CliRenderer = new Class({
 	},
 		
 	getChar: function(data) {
-		return this.chars[data];
+//		console.log('getchar:', data);
+		return this.chars[data] || this.powerups[data];
 	},
 });
 
 /* custom rle encoder that maps our digits to aplphanum chars to make RLE encoding possible. */
 var RLE = new Class({
-	charMappings: {A:0,B:1,C:2,D:3,E:4,F:5,G:6,H:7,I:8,J:9,K:10,L:11,M:12,N:13,O:14,P:15,Q:16,R:17,S:18,T:19,U:20,V:21,W:22,X:23,Y:24,Z:25},
-	numberMappings: ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'],
+	numberMappings: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
 
 	encode:function(input) {
 		var encoding = "";
 
-		Hash.each(input.match(/(.)\1*/g), function(substr){ encoding  += substr.length + "" +this.numberMappings[parseInt(substr[0])] }, this );
-		this.decode(encoding);
+		Hash.each(input.match(/(.)\1*/g), function(substr){
+			var chr = this.numberMappings.indexOf(substr[0]) > -1 ? this.numberMappings[this.numberMappings.indexOf(substr[0])] : substr[0];
+			encoding  += substr.length + "" +chr;
+		}, this );
 		return encoding;
 	},
 
 	decode: function(encoded) {
-		cli.move(35,4).clearLine().write(encoded);
 		var output = "";
 		Object.each(encoded.match(/([0-9]{1,})(\w)/g), function(a){
 			var l = a.split(/([0-9]{1,})/g); 
-			output += new Array(1 + parseInt(l[1])).join(this.charMappings[l[2]]);
+			var chr = (this.numberMappings.indexOf(l[2]) > -1) ? this.numberMappings.indexOf(l[2]) : l[2];
+			output += new Array(1 + parseInt(l[1])).join( chr );
 		}, this );
 		return output;
 	}
