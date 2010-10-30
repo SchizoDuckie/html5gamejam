@@ -142,6 +142,8 @@ var Tetris = (function() {
 				case Tetris.ROTATE_RIGHT:	override = this.rotateShape(1);				break;				
 				case Tetris.DROP:			this.fireEvent('drop', this.dropShape());	break;
 				case Tetris.PAUSE:			this.pause();								break;
+				case Tetris.POWERUP:		this.usePowerup(this);						break;
+				case Tetris.DELETE:			this.deletePowerup();						break;
 			}
 			if(!override) this.scoring.lastCommand = type;	
 			this.update();
@@ -186,6 +188,7 @@ var Tetris = (function() {
 							this.scoring.lastCommand = Tetris.T_SPIN_KICKED;
 							return true;
 						}
+						break;
 					}
 				}
 			}
@@ -205,6 +208,15 @@ var Tetris = (function() {
 		heartbeat: function() { 
 			var model = this.model;
 			var shape = this.shape;
+
+			if(this.checkQueued) {
+				this.checkQueued = false;
+				var cleared = model.check(0, model.total);
+				if(cleared.length) {
+					this.handlePowerups(cleared);
+				}
+				// fire event? 
+			}
 			
 			if(model.fits(shape.movedBy(0,1))) {
 				shape.moveBy(0, 1);
@@ -245,7 +257,16 @@ var Tetris = (function() {
 				var data = this.powerups.run(power, model);
 				model.setData(data);
 				player.setModel(model);
+				player.queueCheck();
 			}
+		},
+
+		deletePowerup: function() {
+			this.powers.shift();
+		},
+			
+		queueCheck: function() {
+			this.checkQueued = true;
 		},
 
 		update: function() {
@@ -404,6 +425,7 @@ var Tetris = (function() {
 	Tetris.DROP = 6;
 	Tetris.LINE_REMOVED = 7;
 	Tetris.POWERUP = 10;
+	Tetris.DELETE = 11;
 	Tetris.PAUSE = 8;
 	Tetris.T_SPIN = 128;
 	Tetris.T_SPIN_KICKED = 256;
@@ -683,7 +705,7 @@ var Tetris = (function() {
 		},
 
 		clone: function() {
-			return new Tetris.Shape(this.points, this.data, this.position);
+			return new Tetris.Shape(this.points, this.data, this.position, this.state);
 		},
 
 		transform: function(matrix) {
