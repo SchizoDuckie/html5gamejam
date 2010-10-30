@@ -516,7 +516,6 @@ var Tetris = (function() {
 			target.addEventListener('touchend', this._);
 		},
 
-
 		stopGame: function(game) {
 			var target = this.game.getContainer();
 			target.removeEventListener('touchstart', this._);
@@ -613,7 +612,7 @@ var Tetris = (function() {
 		Implements: [Events, Options],
 
 		shapes: [
-			[[-2,0], [-1,0],[0,0], [1,0]],	// I
+			[[-1,0], [0,0], [1,0], [2,0]],	// I
 			[[-1,-1],[-1,0],[0,0], [1,0]],	// J
 			[[-1,0], [0,0], [1,0], [1,-1]],	// L
 			[[-1,-1],[-1,0],[0,-1],[0,0]],	// O
@@ -1096,13 +1095,21 @@ var Tetris = (function() {
 
 		initialize: function(options) {
 			this.setOptions(options);
-			this.canvas = options.target.getFirst('.game').set('html','').appendChild(
-				document.createElement('canvas')
-			);
-			if(options.powers) {
-				this.powerups = options.powers.set('html','').appendChild(
-					document.createElement('canvas')
-				)
+
+			var target = options.target;
+			this.canvas = new Element('canvas');
+			target.getFirst('.game').set('html','').appendChild(this.canvas);
+
+			var powers = target.getFirst('.powerups');
+			if(powers) {
+				this.powerups = new Element('canvas');
+				powers.set('html','').appendChild(this.powerups);
+			}
+
+			var queue = target.getFirst('.details .next');
+			if(queue) {
+				this.queue = new Element('canvas');
+				queue.set('html', '').appendChild(this.queue);
 			}
 
 			this.resizeTo(options.width, options.height);
@@ -1123,7 +1130,7 @@ var Tetris = (function() {
 			var shapes = [1,2,3,4,5,6,7]
 			var powers = 'acnrsgbqo'.split('');
 
-			this.renderSprites(shapes, -75, 0);
+			this.renderSprites(shapes, -100, 0);
 			this.renderSprites(powers, 0, 0);
 		},
 
@@ -1149,9 +1156,7 @@ var Tetris = (function() {
 
 		draw: function(model, shape, ghost, queue, powers) {
 			this.model = model;
-			this.spriteWidth = this.canvas.width / model.width;
-			this.spriteHeight = this.canvas.height / model.height;
-
+			
 			this.drawModel(model);
 			this.drawShape(shape);
 			this.drawQueue(queue);
@@ -1202,8 +1207,6 @@ var Tetris = (function() {
 				x = (p[0] % c) * sw;
 				y = p[1] * sh;
 				ctx.drawImage(sprite, x, y, sw, sh);
-				
-
 			}
 		},
 
@@ -1231,7 +1234,28 @@ var Tetris = (function() {
 		},
 
 		drawQueue: function(queue) {
-			var next = queue[0];
+			var sw = this.spriteWidth;
+			var sh = this.spriteHeight;
+			var x = 1;
+			var y = 1;
+
+			this.qctx.clearRect(0,0, this.queue.width, this.queue.height);
+
+			var l = queue.length;
+			for(var i=0; i<l; i++) {
+				var shape = queue[i];
+				var points = shape.getPoints();
+				var data = shape.getData();
+				var sprite = this.getSprite(data);
+			
+				var k = points.length;
+				for(var j=0; j<k; j++) {
+					var p = points[j];
+					this.qctx.drawImage(sprite, (x + p[0])*sw, (y + p[1])*sh, sw, sh);
+				}
+
+				y += 3;
+			}
 			// todo
 		},
 		resizeTo: function(w, h) {
@@ -1239,11 +1263,23 @@ var Tetris = (function() {
 			canvas.width = w;
 			canvas.height = h;
 			this.context = canvas.getContext('2d');
+
+			this.spriteWidth = w / this.options.cols;
+			this.spriteHeight = h / this.options.rows;
+
+			
 			if(this.powerups) {
 				var powers = this.powerups;
 				powers.width = w;
-				powers.height = h / this.options.rows;
+				powers.height = this.spriteHeight;
 				this.pctx = powers.getContext('2d');
+			}
+
+			if(this.queue) {
+				var que = this.queue;
+				que.width = this.spriteWidth * 4;
+				que.height = this.spriteHeight * 9;
+				this.qctx = que.getContext('2d');
 			}
 		}
 	});
