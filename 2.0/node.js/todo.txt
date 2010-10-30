@@ -1,0 +1,42 @@
+- implement fuge : http://github.com/pgte/fugue/wiki/How-Fugue-Works  
+- yql lib: http://github.com/drgath/node-yql
+- geo: http://github.com/strange/node-geoip
+
+ChannelServer
+
+Lobby
+	Users[]
+	Rooms[]
+		Title
+		Users[]
+Gamechannels[]
+	AdminUser
+	Title
+	Password
+	Started
+	Winner
+	Users[]
+		ReadyToLaunch
+		Score
+		Level
+		Lines
+		GameState
+		Is_Cheater
+
+	ChatLog[]
+HighScores: []
+
+
+
+GameMaster
+	GameChannel
+	Start => allUsersReadyEvent
+	Cleanup
+	AddUser
+	GameOver
+	receiveStatus
+	publishStatuses
+	validateStatus
+	distributeStatus
+	deploypowerup(type, targetuser)
+	allowedToDeploy(type, from, to)
