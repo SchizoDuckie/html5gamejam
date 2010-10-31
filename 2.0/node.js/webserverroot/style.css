@@ -131,6 +131,18 @@ h1, h2, h3 {
 		width:120px;
 	}
 
+	.details h3 {
+		float:left;
+		clear:left;
+		line-height:40px;
+	}
+
+
+	.details p {
+		float:right;
+		line-height:40px;
+	}
+
 /*
 body {
   background:   #9B8669;

@@ -144,6 +144,7 @@ var Tetris = (function() {
 				case Tetris.PAUSE:			this.pause();								break;
 				case Tetris.POWERUP:		this.usePowerup(this);						break;
 				case Tetris.DELETE:			this.deletePowerup();						break;
+				case Tetris.HOLD_SHAPE:		this.holdShape();							break;
 			}
 			if(!override) this.scoring.lastCommand = type;	
 			this.update();
@@ -203,6 +204,21 @@ var Tetris = (function() {
 				dropped++;
 			}
 			return {dropped:dropped};
+		},
+
+		holdShape: function() {
+			var shape = this.shape;
+			var held = this.heldShape;
+			this.heldShape = shape;				
+		//	this.heldShape.position = new Matrix();
+			if(held) {
+				this.shape = held;
+			//	this.shape.position = shape.position;
+			} else {
+				this.newShape();
+			}
+
+			this.renderer.drawHold(this.heldShape);
 		},
 
 		heartbeat: function() { 
@@ -426,6 +442,7 @@ var Tetris = (function() {
 	Tetris.LINE_REMOVED = 7;
 	Tetris.POWERUP = 10;
 	Tetris.DELETE = 11;
+	Tetris.HOLD_SHAPE = 12;
 	Tetris.PAUSE = 8;
 	Tetris.T_SPIN = 128;
 	Tetris.T_SPIN_KICKED = 256;
@@ -1112,6 +1129,12 @@ var Tetris = (function() {
 				queue.set('html', '').appendChild(this.queue);
 			}
 
+			var hold = target.getFirst('.details .hold');
+			if(hold) {
+				this.holdbox = new Element('canvas');
+				hold.set('html', '').appendChild(this.holdbox);
+			}
+
 			this.resizeTo(options.width, options.height);
 
 			this.sprite = new Image();
@@ -1256,8 +1279,26 @@ var Tetris = (function() {
 
 				y += 3;
 			}
-			// todo
 		},
+
+		
+		drawHold: function(shape) {
+			var sw = this.spriteWidth;
+			var sh = this.spriteHeight;
+
+			this.hctx.clearRect(0,0, this.holdbox.width, this.holdbox.height);
+
+			var points = shape.getPoints();
+			var data = shape.getData();
+			var sprite = this.getSprite(data);
+		
+			var l = points.length;
+			for(var i=0; i<l; i++) {
+				var p = points[i];
+				this.hctx.drawImage(sprite, p[0]*sw, (1+p[1])*sh, sw, sh);
+			}
+		},
+
 		resizeTo: function(w, h) {
 			var canvas = this.canvas;
 			canvas.width = w;
@@ -1280,6 +1321,13 @@ var Tetris = (function() {
 				que.width = this.spriteWidth * 4;
 				que.height = this.spriteHeight * 9;
 				this.qctx = que.getContext('2d');
+			}
+
+			if(this.holdbox) {
+				var hold = this.holdbox;
+				hold.width = this.spriteWidth * 4;
+				hold.height = this.spriteHeight * 4;
+				this.hctx = hold.getContext('2d');
 			}
 		}
 	});
