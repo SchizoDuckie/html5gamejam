@@ -82,6 +82,7 @@ var Tetris = (function() {
 				return;
 			} else {
 				this.shape = this.factory.nextShape();
+				this.holdUsed = false;
 				var x = _floor(this.model.width / 2);
 				this.shape.moveTo(x, 1);
 
@@ -89,7 +90,6 @@ var Tetris = (function() {
 					this.stop();
 					this.fireEvent('gameover');
 					return false;
-					
 				}
 			}
 			return true;
@@ -207,18 +207,26 @@ var Tetris = (function() {
 		},
 
 		holdShape: function() {
+			if(this.holdUsed){
+				return;
+			}
+
 			var shape = this.shape;
-			var held = this.heldShape;
-			this.heldShape = shape;				
-		//	this.heldShape.position = new Matrix();
-			if(held) {
-				this.shape = held;
-			//	this.shape.position = shape.position;
+			
+			if(this.heldShape) {
+				this.shape = this.heldShape;
+				var x = _floor(this.model.width / 2);
+				this.shape.moveTo(x, 1);				
 			} else {
 				this.newShape();
 			}
 
-			this.renderer.drawHold(this.heldShape);
+			this.holdUsed = true;
+			
+			this.heldShape = shape;
+			shape.rotateBy(-shape.state);
+			shape.moveTo(1,1);
+			this.renderer.drawHold(shape);
 		},
 
 		heartbeat: function() { 
@@ -243,8 +251,8 @@ var Tetris = (function() {
 				}				
 				this.fireEvent('heartbeat', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData(), score: this.scoring.getScore()}); 
 				this.newShape();
-
 			}
+
 			if(!this.gameover) {
 				this.timer = setTimeout(this.heartbeat.bind(this), 1000 - (this.scoring.getLevel() * 50));
 			} 
@@ -361,7 +369,7 @@ var Tetris = (function() {
 			//dbg("Lines removed, last command was: ", lc, Tetris.T_SPIN);
 			if(lc == Tetris.T_SPIN || lc == Tetris.T_SPIN_KICKED) {
 				points = this.level * this.rules[lc][lines.removed]; 
-				alert("T-Spin baby!, you removed " +lines.removed+" lines and got "+points+" points!");
+			//	alert("T-Spin baby!, you removed " +lines.removed+" lines and got "+points+" points!");
 				this.fireEvent('tSpin', {points: points, lines:lines});	
 			} else {
 				points = this.level * (this.rules[32][lines.removed] || this.rules[64][lines.removed]) ;		
@@ -1295,7 +1303,7 @@ var Tetris = (function() {
 			var l = points.length;
 			for(var i=0; i<l; i++) {
 				var p = points[i];
-				this.hctx.drawImage(sprite, p[0]*sw, (1+p[1])*sh, sw, sh);
+				this.hctx.drawImage(sprite, p[0]*sw, p[1]*sh, sw, sh);
 			}
 		},
 

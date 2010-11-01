@@ -1,4 +1,4 @@
-@import url("../types/journal.css");
+@import url("types/journal.css");
 
 html,body {
 	margin:0;
@@ -120,7 +120,7 @@ h1, h2, h3 {
 
 	#player1 .powerups {
 		position:relative;
-		clear:both;
+		clear:left;
 		width:250px;
 		height:25px;
 		top:10px;
