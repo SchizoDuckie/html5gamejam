@@ -82,6 +82,7 @@ var Tetris = (function() {
 				return;
 			} else {
 				this.shape = this.factory.nextShape();
+				this.holdUsed = false;
 				var x = _floor(this.model.width / 2);
 				this.shape.moveTo(x, 1);
 
@@ -89,7 +90,6 @@ var Tetris = (function() {
 					this.stop();
 					this.fireEvent('gameover');
 					return false;
-					
 				}
 			}
 			return true;
@@ -144,6 +144,7 @@ var Tetris = (function() {
 				case Tetris.PAUSE:			this.pause();								break;
 				case Tetris.POWERUP:		this.usePowerup(this);						break;
 				case Tetris.DELETE:			this.deletePowerup();						break;
+				case Tetris.HOLD_SHAPE:		this.holdShape();							break;
 			}
 			if(!override) this.scoring.lastCommand = type;	
 			this.update();
@@ -205,6 +206,29 @@ var Tetris = (function() {
 			return {dropped:dropped};
 		},
 
+		holdShape: function() {
+			if(this.holdUsed){
+				return;
+			}
+
+			var shape = this.shape;
+			
+			if(this.heldShape) {
+				this.shape = this.heldShape;
+				var x = _floor(this.model.width / 2);
+				this.shape.moveTo(x, 1);				
+			} else {
+				this.newShape();
+			}
+
+			this.holdUsed = true;
+			
+			this.heldShape = shape;
+			shape.rotateBy(-shape.state);
+			shape.moveTo(1,1);
+			this.renderer.drawHold(shape);
+		},
+
 		heartbeat: function() { 
 			var model = this.model;
 			var shape = this.shape;
@@ -227,8 +251,8 @@ var Tetris = (function() {
 				}				
 				this.fireEvent('heartbeat', {model: model.data, shapePoints: shape.getPoints(), shapeData: shape.getData(), score: this.scoring.getScore()}); 
 				this.newShape();
-
 			}
+
 			if(!this.gameover) {
 				this.timer = setTimeout(this.heartbeat.bind(this), 1000 - (this.scoring.getLevel() * 50));
 			} 
@@ -345,7 +369,7 @@ var Tetris = (function() {
 			//dbg("Lines removed, last command was: ", lc, Tetris.T_SPIN);
 			if(lc == Tetris.T_SPIN || lc == Tetris.T_SPIN_KICKED) {
 				points = this.level * this.rules[lc][lines.removed]; 
-				alert("T-Spin baby!, you removed " +lines.removed+" lines and got "+points+" points!");
+			//	alert("T-Spin baby!, you removed " +lines.removed+" lines and got "+points+" points!");
 				this.fireEvent('tSpin', {points: points, lines:lines});	
 			} else {
 				points = this.level * (this.rules[32][lines.removed] || this.rules[64][lines.removed]) ;		
@@ -426,6 +450,7 @@ var Tetris = (function() {
 	Tetris.LINE_REMOVED = 7;
 	Tetris.POWERUP = 10;
 	Tetris.DELETE = 11;
+	Tetris.HOLD_SHAPE = 12;
 	Tetris.PAUSE = 8;
 	Tetris.T_SPIN = 128;
 	Tetris.T_SPIN_KICKED = 256;
@@ -1112,6 +1137,12 @@ var Tetris = (function() {
 				queue.set('html', '').appendChild(this.queue);
 			}
 
+			var hold = target.getFirst('.details .hold');
+			if(hold) {
+				this.holdbox = new Element('canvas');
+				hold.set('html', '').appendChild(this.holdbox);
+			}
+
 			this.resizeTo(options.width, options.height);
 
 			this.sprite = new Image();
@@ -1256,8 +1287,26 @@ var Tetris = (function() {
 
 				y += 3;
 			}
-			// todo
 		},
+
+		
+		drawHold: function(shape) {
+			var sw = this.spriteWidth;
+			var sh = this.spriteHeight;
+
+			this.hctx.clearRect(0,0, this.holdbox.width, this.holdbox.height);
+
+			var points = shape.getPoints();
+			var data = shape.getData();
+			var sprite = this.getSprite(data);
+		
+			var l = points.length;
+			for(var i=0; i<l; i++) {
+				var p = points[i];
+				this.hctx.drawImage(sprite, p[0]*sw, p[1]*sh, sw, sh);
+			}
+		},
+
 		resizeTo: function(w, h) {
 			var canvas = this.canvas;
 			canvas.width = w;
@@ -1280,6 +1329,13 @@ var Tetris = (function() {
 				que.width = this.spriteWidth * 4;
 				que.height = this.spriteHeight * 9;
 				this.qctx = que.getContext('2d');
+			}
+
+			if(this.holdbox) {
+				var hold = this.holdbox;
+				hold.width = this.spriteWidth * 4;
+				hold.height = this.spriteHeight * 4;
+				this.hctx = hold.getContext('2d');
 			}
 		}
 	});
