@@ -5,6 +5,7 @@ var fs    = require('fs'),
     faye  = require('./faye-node.js');
 	mootools = require('./mootools-server.js'),
 	fayehook = require('./faye-hook.js');
+
 require('./node-cli.js');
 
 var Tets = (function() {
@@ -13,9 +14,7 @@ var Tets = (function() {
 	
 	/**
 	 * Tets
-	 * 
 	 */
-
 	var Tets = new Class({
 		Implements: [Events, Options],
 	
@@ -23,12 +22,10 @@ var Tets = (function() {
 			this.events = new Tets.EventDispatcher(options);
 			this.commserver = new Tets.CommServer(options);
 			this.webserver = new Tets.WebServer(options);
-			this.commserver.setWebserver(this.webserver);
 			this.channelserver =  new Tets.ChannelServer(options);
 			this.gameserver = new Tets.GameServer(options);
 		
 		}
-		
 	});
 
 
@@ -51,6 +48,9 @@ var Tets = (function() {
 		}
 		
 		callback: function(request, response) {
+
+			  Monomi.detectBrowserType(request),
+
 
 			var path = (request.url === '/') ? '/index.html' : request.url;
 			fs.readFile(PUBLIC_DIR + path, function(err, content) {
@@ -109,7 +109,18 @@ var Tets = (function() {
 			//cli.move(0,4).clearLine().write("Outgoing: \n", JSON.encode(message));
 			
 			callback(message);
+		}
+	});
+
+
+	Tets.UserList = new Class({
+
+
+		addUser: function(user) {
+
 		},
+
+		
 
 		getOnlineCount:function() {
 			 var obj = this.users, count = 0;
@@ -120,6 +131,7 @@ var Tets = (function() {
 			  }
 			return count;
 		},
+
 
 		/**
 		 * Chuck Roundhouse kicks inactive users.
